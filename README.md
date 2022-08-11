@@ -1,10 +1,10 @@
-# 
+# Launchpad
 
 <!-- badges -->
-[![cljdoc badge](https://cljdoc.org/badge/com.lambdaisland/)](https://cljdoc.org/d/com.lambdaisland/) [![Clojars Project](https://img.shields.io/clojars/v/com.lambdaisland/.svg)](https://clojars.org/com.lambdaisland/)
+[![cljdoc badge](https://cljdoc.org/badge/com.lambdaisland/launchpad)](https://cljdoc.org/d/com.lambdaisland/launchpad) [![Clojars Project](https://img.shields.io/clojars/v/com.lambdaisland/launchpad.svg)](https://clojars.org/com.lambdaisland/launchpad)
 <!-- /badges -->
 
-
+Build kit for writing your own script that starts a Clojure nREPL server inside your project.
 
 ## Features
 
@@ -14,13 +14,13 @@
 To use the latest release, add the following to your `deps.edn` ([Clojure CLI](https://clojure.org/guides/deps_and_cli))
 
 ```
-com.lambdaisland/ {:mvn/version "0.0.0"}
+com.lambdaisland/launchpad {:mvn/version "0.0.0"}
 ```
 
 or add the following to your `project.clj` ([Leiningen](https://leiningen.org/))
 
 ```
-[com.lambdaisland/ "0.0.0"]
+[com.lambdaisland/launchpad "0.0.0"]
 ```
 <!-- /installation -->
 
@@ -35,7 +35,7 @@ or add the following to your `project.clj` ([Leiningen](https://leiningen.org/))
 
 &nbsp;
 
- is part of a growing collection of quality Clojure libraries created and maintained
+launchpad is part of a growing collection of quality Clojure libraries created and maintained
 by the fine folks at [Gaiwan](https://gaiwan.co).
 
 Pay it forward by [becoming a backer on our Open Collective](http://opencollective.com/lambda-island),
@@ -51,7 +51,7 @@ You can find an overview of our projects at [lambdaisland/open-source](https://g
 <!-- contributing -->
 ## Contributing
 
-Everyone has a right to submit patches to , and thus become a contributor.
+Everyone has a right to submit patches to launchpad, and thus become a contributor.
 
 Contributors MUST
 
