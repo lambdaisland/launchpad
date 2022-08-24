@@ -21,10 +21,12 @@
 
 (def default-cider-version "0.28.3")
 (def default-refactor-nrepl-version "3.5.2")
+(def classpath-coords {:mvn/version "RELEASE"}
+  #_{:local/root "/home/arne/github/lambdaisland/classpath"})
 
-(def verbose (some #{"-v" "--verbose"} *command-line-args*))
+(def verbose? (some #{"-v" "--verbose"} *command-line-args*))
 
-(defn debug [& args] (when verbose (apply println "[DEBUG]" args)))
+(defn debug [& args] (when verbose? (apply println "[DEBUG]" args)))
 (defn info [& args] (apply println "[INFO]" args))
 (defn warn [& args] (apply println "[WARN]" args))
 (defn error [& args] (apply println "[ERROR]" args))
@@ -132,18 +134,34 @@
   (Thread/sleep 3000)
   ctx)
 
-(defn clojure-cli-args [{:keys [aliases nrepl-port middleware extra-deps] :as ctx}]
+(defn clojure-cli-args [{:keys [aliases nrepl-port middleware extra-deps eval-forms] :as ctx}]
   (cond-> ["clojure"
            "-J-XX:-OmitStackTraceInFastThrow"
+           (str "-J-Dlambdaisland.launchpad.aliases=" (str/join "," aliases))
+           #_(str "-J-Dlambdaisland.launchpad.extra-dep-source=" (pr-str {:deps extra-deps}))
            (str/join ":" (cons "-A" aliases))]
     extra-deps
     (into ["-Sdeps" (pr-str {:deps extra-deps})])
     :->
-    (into ["-M" "-m" "nrepl.cmdline" "--port" (str nrepl-port)])
+    (into ["-M" "-e" (pr-str `(do ~@eval-forms))])
     middleware
-    (into ["--middleware" (pr-str middleware)])))
+    (into [])))
 
-(defn start-nrepl [{:keys [options aliases nrepl-port env] :as ctx}]
+(defn run-nrepl-server [{:keys [nrepl-port middleware] :as ctx}]
+  (update ctx :eval-forms (fnil conj [])
+          '(require 'nrepl.cmdline)
+          `(nrepl.cmdline/-main "--port" ~(str nrepl-port) "--middleware" ~(pr-str middleware))))
+
+(defn hot-reload-deps [{:keys [extra-deps aliases] :as ctx}]
+  (as-> ctx <>
+    (update <> :extra-deps assoc 'com.lambdaisland/classpath classpath-coords)
+    (update <> :eval-forms (fnil conj [])
+            '(require 'lambdaisland.classpath.watch-deps)
+            `(lambdaisland.classpath.watch-deps/start! {:aliases ~(mapv keyword aliases)
+                                                        :extra {:deps '~(:extra-deps <>)}
+                                                        :include-local-roots? true}))))
+
+(defn start-process [{:keys [options aliases nrepl-port env] :as ctx}]
   (let [args (clojure-cli-args ctx)]
     (apply info (map shellquote args))
     (process args {:env env :out :inherit :err :inherit}))
@@ -162,7 +180,9 @@
 (def default-steps [find-free-nrepl-port
                     compute-middleware
                     compute-extra-deps
-                    start-nrepl
+                    run-nrepl-server
+                    hot-reload-deps
+                    start-process
                     wait-for-nrepl
                     maybe-connect-emacs])
 
@@ -188,7 +208,8 @@
          (tools-cli/parse-opts *command-line-args* (into cli-opts extra-cli-opts))]
 
      (when (or errors (:help options) (empty? arguments))
-       (println (str executable " <options> [alias]+") )
+       (let [aliases (keys (:aliases (read-string (slurp "deps.edn"))))]
+         (println (str executable " <options> [" (str/join "|" (map #(subs (str %) 1) aliases)) "]+") ))
        (println)
        (println summary)
        (System/exit 0))
