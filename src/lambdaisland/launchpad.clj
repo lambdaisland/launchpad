@@ -21,7 +21,8 @@
 
 (def default-cider-version "0.28.3")
 (def default-refactor-nrepl-version "3.5.2")
-(def classpath-coords {:mvn/version "RELEASE"}
+(def classpath-coords
+  {:mvn/version "0.1.33"}
   #_{:local/root "/home/arne/github/lambdaisland/classpath"})
 
 (def verbose? (some #{"-v" "--verbose"} *command-line-args*))
