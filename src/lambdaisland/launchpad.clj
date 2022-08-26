@@ -165,8 +165,10 @@
 (defn start-process [{:keys [options aliases nrepl-port env] :as ctx}]
   (let [args (clojure-cli-args ctx)]
     (apply info (map shellquote args))
-    (process args {:env env :out :inherit :err :inherit}))
-  ctx)
+    (let [process (process args {:env env :out :inherit :err :inherit})]
+      (future
+        (System/exit (.waitFor process)))
+      (assoc ctx :clojure-process process))))
 
 (defn maybe-connect-emacs [{:keys [options nrepl-port project-root] :as ctx}]
   (when (:cider-connect options)
@@ -223,10 +225,11 @@
                            options)
                 :aliases arguments
                 :project-root project-root
-                :env (into {} (System/getenv))}]
-       (reduce #(%2 %1) ctx steps))
+                :env (into {} (System/getenv))}
+           ctx (reduce #(%2 %1) ctx steps)]
+       @(promise))
 
-     @(promise))))
+     )))
 
 (comment
   (let [options {:cider-mw true
