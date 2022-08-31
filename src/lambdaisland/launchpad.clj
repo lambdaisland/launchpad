@@ -14,10 +14,10 @@
 (def cli-opts
   [["-h" "--help"]
    ["-v" "--verbose" "Print debug information"]
-   [nil "--cider-mw" "Include the CIDER nREPL middleware"]
-   [nil "--refactor-mw" "Include the refactor-nrepl middleware"]
+   [nil "--cider-nrepl" "Include the CIDER nREPL middleware"]
+   [nil "--refactor-nrepl" "Include the refactor-nrepl middleware"]
    [nil "--cider-connect" "Automatically connect CIDER"]
-   [nil "--emacs" "Shorthand for --cider-mw --refactor-mw --cider-connect"]])
+   [nil "--emacs" "Shorthand for --cider-nrepl --refactor-nrepl --cider-connect"]])
 
 (def default-cider-version "0.28.3")
 (def default-refactor-nrepl-version "3.5.2")
@@ -105,17 +105,17 @@
   [{:keys [options] :as ctx}]
   (let [add-mw #(update %1 :middleware (fnil conj []) %2)]
     (cond-> ctx
-      (:cider-mw options)
+      (:cider-nrepl options)
       (add-mw 'cider.nrepl/cider-middleware)
-      (:refactor-mw options)
+      (:refactor-nrepl options)
       (add-mw 'refactor-nrepl.middleware/wrap-refactor))))
 
 (defn compute-extra-deps [{:keys [options] :as ctx}]
   (let [assoc-dep #(update %1 :extra-deps assoc %2 %3)]
     (cond-> ctx
-      (:cider-mw options)
+      (:cider-nrepl options)
       (assoc-dep 'cider/cider-nrepl {:mvn/version (or (emacs-cider-version) default-cider-version)})
-      (:refactor-mw options)
+      (:refactor-nrepl options)
       (assoc-dep 'refactor-nrepl/refactor-nrepl {:mvn/version (or (emacs-refactor-nrepl-version) default-refactor-nrepl-version)} ))))
 
 (defn find-free-nrepl-port [ctx]
@@ -219,8 +219,8 @@
 
      (let [ctx {:options (if (:emacs options)
                            (assoc options
-                                  :cider-mw true
-                                  :refactor-mw true
+                                  :cider-nrepl true
+                                  :refactor-nrepl true
                                   :cider-connect true)
                            options)
                 :aliases arguments
@@ -232,8 +232,8 @@
      )))
 
 (comment
-  (let [options {:cider-mw true
-                 :refactor-mw true
+  (let [options {:cider-nrepl true
+                 :refactor-nrepl true
                  :env (into {} (System/getenv))
                  :project-root project-root}]
     (reduce #(%2 %1)
