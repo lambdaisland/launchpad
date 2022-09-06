@@ -22,9 +22,11 @@
 (def default-cider-version "0.28.3")
 (def default-refactor-nrepl-version "3.5.2")
 (def classpath-coords
-  #_{:mvn/version "0.2.37"}
-  {:local/root "/home/arne/github/lambdaisland/classpath"})
-(def launchpad-coords {:local/root "/home/arne/github/lambdaisland/launchpad"})
+  {:mvn/version "0.2.37"}
+  #_{:local/root "/home/arne/github/lambdaisland/classpath"})
+(def launchpad-coords {:git/url "https://github.com/lambdaisland/launchpad"
+                       :git/sha "176b4678c201e2a04e9110c27b39628fd7342a60"
+                       #_#_:local/root "/home/arne/github/lambdaisland/launchpad"})
 
 (def verbose? (some #{"-v" "--verbose"} *command-line-args*))
 
