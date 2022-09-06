@@ -196,7 +196,7 @@
           '(require 'nrepl.cmdline)
           `(nrepl.cmdline/-main "--port" ~(str nrepl-port) "--middleware" ~(pr-str middleware))))
 
-(defn hot-reload-deps [{:keys [extra-deps aliases] :as ctx}]
+(defn include-hot-reload-deps [{:keys [extra-deps aliases] :as ctx}]
   (as-> ctx <>
     (update <> :extra-deps assoc 'com.lambdaisland/classpath classpath-coords)
     (update <> :eval-forms (fnil conj [])
@@ -258,9 +258,9 @@
                     handle-cli-args
                     compute-middleware
                     compute-extra-deps
+                    include-hot-reload-deps
                     include-launchpad-deps
                     run-nrepl-server
-                    hot-reload-deps
                     start-process
                     wait-for-nrepl
                     maybe-connect-emacs
