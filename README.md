@@ -4,14 +4,50 @@
 [![cljdoc badge](https://cljdoc.org/badge/com.lambdaisland/launchpad)](https://cljdoc.org/d/com.lambdaisland/launchpad) [![Clojars Project](https://img.shields.io/clojars/v/com.lambdaisland/launchpad.svg)](https://clojars.org/com.lambdaisland/launchpad)
 <!-- /badges -->
 
-Build kit for writing your own script that starts a Clojure nREPL server inside your project.
+Launchpad is a Clojure dev process launcher.
+
+It starts from these observations:
+
+- Clojure development is done interactively
+- This requires a nREPL connection between a Clojure process and an editor
+- How Clojure/nREPL gets started varies by
+  - editor (which middleware to include?)
+  - project (how to start the system, cljs config)
+  - individual (preferences in tooling, local roots)
+- Projects are increasingly multi-module, either monorepo, or spread across repos
+- We mainly rely on our editors to launch Clojure/nREPL because it is tedious
+- Other tools could benefit from participating in the startup sequence (e.g. lambdaisland/classpath)
+- Automating startup is done in an editor-specific way (.dir-locals.el, calva.replConnectSequences)
+- And requires copying boilerplate around (user.clj)
+
+And these preferences:
+
+- We want project setup to be self-contained, so starting a process "just works"
+- This should work for everyone on the team, no matter what editor they use
+- We prefer running the process in a terminal for cleaner separation and control
+- When working on multiple related projects we prefer a single JVM over multiple
+
+## How it works
+
+Launchpad is a babashka-compatible library, through a number of steps it builds
+up a Clojure command line invocation, including JVM options, extra dependencies,
+and forms to evaluate, including starting nREPL with selected middleware,
+watching `deps.edn` files for changes, starting ClojureScript build watchers,
+and hooking up your editor (if supported, otherwise a manual connect to nREPL is
+needed).
+
+It takes information from `deps.edn` (checked in) and `deps.local.edn` (not
+checked in, not yet implemented) and arguments passed in on the command line to
+determine which modules to include, which middleware to add to nREPL, which
+shadow-cljs builds to start, etc.
+
 
 ## Features
 
 <!-- installation -->
 ## Installation
 
-To use the latest release, add the following to your `deps.edn` ([Clojure CLI](https://clojure.org/guides/deps_and_cli))
+To use the latest release, add the following to your `bb.edn`: 
 
 ```
 com.lambdaisland/launchpad {:mvn/version "0.0.0"}

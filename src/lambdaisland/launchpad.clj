@@ -22,8 +22,9 @@
 (def default-cider-version "0.28.3")
 (def default-refactor-nrepl-version "3.5.2")
 (def classpath-coords
-  {:mvn/version "0.2.37"}
-  #_{:local/root "/home/arne/github/lambdaisland/classpath"})
+  #_{:mvn/version "0.2.37"}
+  {:local/root "/home/arne/github/lambdaisland/classpath"})
+(def launchpad-coords {:local/root "/home/arne/github/lambdaisland/launchpad"})
 
 (def verbose? (some #{"-v" "--verbose"} *command-line-args*))
 
@@ -121,6 +122,48 @@
 (defn find-free-nrepl-port [ctx]
   (assoc ctx :nrepl-port (free-port)))
 
+(defn read-deps-edn [ctx]
+  (let [deps-edn (edn/read-string (slurp "deps.edn") )
+        deps-local (when (.exists (io/file "deps.local.edn"))
+                     (edn/read-string (slurp "deps.local.edn") ))]
+
+    (assoc ctx :deps-edn
+           (merge-with (fn [a b]
+                         (cond
+                           (and (map? a) (map? b))
+                           (merge a b)
+                           (and (vector? a) (vector? b))
+                           (into a b)
+                           :else
+                           b))
+                       deps-edn deps-local))))
+
+(defn handle-cli-args [{:keys [executable project-root deps-edn] :as ctx}]
+  (let [{:keys [options
+                arguments
+                summary
+                errors]}
+        (tools-cli/parse-opts (into  *command-line-args* (:launchpad/main-opts deps-edn)) cli-opts)]
+
+    (when (or errors (:help options))
+      (let [aliases (keys (:aliases deps-edn))]
+        (println (str executable " <options> [" (str/join "|" (map #(subs (str %) 1) aliases)) "]+") ))
+      (println)
+      (println summary)
+      (System/exit 0))
+
+    (assoc ctx
+           :options (if (:emacs options)
+                      (assoc options
+                             :cider-nrepl true
+                             :refactor-nrepl true
+                             :cider-connect true)
+                      options)
+           :aliases (concat
+                     (map keyword arguments)
+                     (:launchpad/aliases deps-edn))
+           :env (into {} (System/getenv)))))
+
 (defn wait-for-nrepl [{:keys [nrepl-port] :as ctx}]
   (let [timeout 300000]
     (debug "Waiting for nREPL port to be reachable on" nrepl-port)
@@ -138,9 +181,9 @@
 (defn clojure-cli-args [{:keys [aliases nrepl-port middleware extra-deps eval-forms] :as ctx}]
   (cond-> ["clojure"
            "-J-XX:-OmitStackTraceInFastThrow"
-           (str "-J-Dlambdaisland.launchpad.aliases=" (str/join "," aliases))
+           (str "-J-Dlambdaisland.launchpad.aliases=" (str/join "," (map #(subs (str %) 1) aliases)))
            #_(str "-J-Dlambdaisland.launchpad.extra-dep-source=" (pr-str {:deps extra-deps}))
-           (str/join ":" (cons "-A" aliases))]
+           (str/join (cons "-A" aliases))]
     extra-deps
     (into ["-Sdeps" (pr-str {:deps extra-deps})])
     :->
@@ -162,6 +205,23 @@
                                                         :extra {:deps '~(:extra-deps <>)}
                                                         :include-local-roots? true}))))
 
+(defn start-shadow-build [{:keys [deps-edn aliases] :as ctx}]
+  (let [build-ids (concat (:launchpad/shadow-build-ids deps-edn)
+                          (mapcat #(get-in deps-edn [:aliases % :launchpad/shadow-build-ids]) aliases))
+        ]
+    (if (seq build-ids)
+      (-> ctx
+          (update :middleware (fnil conj []) 'shadow.cljs.devtools.server.nrepl/middleware)
+          (assoc :shadow-cljs/build-ids build-ids)
+          (update :eval-forms (fnil conj [])
+                  '(require 'lambdaisland.launchpad.shadow)
+                  `(lambdaisland.launchpad.shadow/start-builds!
+                    ~@build-ids)))
+      ctx)))
+
+(defn include-launchpad-deps [{:keys [extra-deps] :as ctx}]
+  (update ctx :extra-deps assoc 'com.lambdaisland/launchpad launchpad-coords))
+
 (defn start-process [{:keys [options aliases nrepl-port env] :as ctx}]
   (let [args (clojure-cli-args ctx)]
     (apply info (map shellquote args))
@@ -174,20 +234,37 @@
   (when (:cider-connect options)
     (debug "Connecting CIDER with project-dir" project-root)
     (eval-emacs
-     `(~'cider-connect-clj (~'list
-                            :host "localhost"
-                            :port ~nrepl-port
-                            :project-dir ~project-root))))
+     `(~'let ((~'repl (~'cider-connect-clj (~'list
+                                            :host "localhost"
+                                            :port ~nrepl-port
+                                            :project-dir ~project-root))))
+
+       ~@(for [build-id (:shadow-cljs/build-ids ctx)
+               :let [init-sym (symbol "launchpad" (name build-id))]]
+           `(~'progn
+             (~'setf (~'alist-get '~init-sym
+                      ~'cider-cljs-repl-types)
+              (~'list ~(pr-str
+                        `(shadow.cljs.devtools.api/nrepl-select ~build-id))))
+             (~'cider-connect-sibling-cljs (~'list
+                                            :cljs-repl-type '~init-sym
+                                            :host "localhost"
+                                            :port ~nrepl-port
+                                            :project-dir ~project-root)))))))
   ctx)
 
 (def default-steps [find-free-nrepl-port
+                    read-deps-edn
+                    handle-cli-args
                     compute-middleware
                     compute-extra-deps
+                    include-launchpad-deps
                     run-nrepl-server
                     hot-reload-deps
                     start-process
                     wait-for-nrepl
-                    maybe-connect-emacs])
+                    maybe-connect-emacs
+                    ])
 
 (defn find-project-root []
   (loop [dir (.getParent (io/file *file*))]
@@ -197,39 +274,18 @@
       (recur (.getParent (io/file dir))))))
 
 (defn main
-  ([{:keys [steps extra-cli-opts executable project-root]
+  ([{:keys [steps executable project-root]
      :or {steps default-steps
           project-root (find-project-root)}}]
-   (let [executable (or executable
-                        (str/replace *file*
-                                     (str project-root "/")
-                                     ""))
-         {:keys [options
-                 arguments
-                 summary
-                 errors]}
-         (tools-cli/parse-opts *command-line-args* (into cli-opts extra-cli-opts))]
 
-     (when (or errors (:help options) (empty? arguments))
-       (let [aliases (keys (:aliases (read-string (slurp "deps.edn"))))]
-         (println (str executable " <options> [" (str/join "|" (map #(subs (str %) 1) aliases)) "]+") ))
-       (println)
-       (println summary)
-       (System/exit 0))
-
-     (let [ctx {:options (if (:emacs options)
-                           (assoc options
-                                  :cider-nrepl true
-                                  :refactor-nrepl true
-                                  :cider-connect true)
-                           options)
-                :aliases arguments
-                :project-root project-root
-                :env (into {} (System/getenv))}
-           ctx (reduce #(%2 %1) ctx steps)]
-       @(promise))
-
-     )))
+   (reduce #(%2 %1)
+           {:executable (or executable
+                            (str/replace *file*
+                                         (str project-root "/")
+                                         ""))
+            :project-root project-root}
+           steps)
+   @(promise)))
 
 (comment
   (let [options {:cider-nrepl true
