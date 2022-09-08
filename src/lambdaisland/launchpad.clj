@@ -22,11 +22,12 @@
 (def default-cider-version "0.28.3")
 (def default-refactor-nrepl-version "3.5.2")
 (def classpath-coords
-  {:mvn/version "0.2.37"}
+  {:mvn/version "0.4.44"}
   #_{:local/root "/home/arne/github/lambdaisland/classpath"})
-(def launchpad-coords {:git/url "https://github.com/lambdaisland/launchpad"
-                       :git/sha "176b4678c201e2a04e9110c27b39628fd7342a60"
-                       #_#_:local/root "/home/arne/github/lambdaisland/launchpad"})
+(def launchpad-coords {
+                       ;; :git/url "https://github.com/lambdaisland/launchpad"
+                       ;; :git/sha "176b4678c201e2a04e9110c27b39628fd7342a60"
+                       :local/root "/home/arne/github/lambdaisland/launchpad"})
 
 (def verbose? (some #{"-v" "--verbose"} *command-line-args*))
 
@@ -129,24 +130,25 @@
         deps-local (when (.exists (io/file "deps.local.edn"))
                      (edn/read-string (slurp "deps.local.edn") ))]
 
-    (assoc ctx :deps-edn
-           (merge-with (fn [a b]
-                         (cond
-                           (and (map? a) (map? b))
-                           (merge a b)
-                           (and (vector? a) (vector? b))
-                           (into a b)
-                           :else
-                           b))
-                       deps-edn deps-local))))
+    (-> ctx
+        (update :aliases (fnil into []) (:launchpad/aliases deps-local))
+        (update :main-opts (fnil into []) (:launchpad/main-opts deps-local))
+        (assoc :deps-edn (merge-with (fn [a b]
+                                       (cond
+                                         (and (map? a) (map? b))
+                                         (merge a b)
+                                         (and (vector? a) (vector? b))
+                                         (into a b)
+                                         :else
+                                         b))
+                                     deps-edn deps-local)))))
 
-(defn handle-cli-args [{:keys [executable project-root deps-edn] :as ctx}]
+(defn handle-cli-args [{:keys [executable project-root deps-edn main-opts] :as ctx}]
   (let [{:keys [options
                 arguments
                 summary
                 errors]}
-        (tools-cli/parse-opts (into  *command-line-args* (:launchpad/main-opts deps-edn)) cli-opts)]
-
+        (tools-cli/parse-opts main-opts cli-opts)]
     (when (or errors (:help options))
       (let [aliases (keys (:aliases deps-edn))]
         (println (str executable " <options> [" (str/join "|" (map #(subs (str %) 1) aliases)) "]+") ))
@@ -154,17 +156,15 @@
       (println summary)
       (System/exit 0))
 
-    (assoc ctx
-           :options (if (:emacs options)
-                      (assoc options
-                             :cider-nrepl true
-                             :refactor-nrepl true
-                             :cider-connect true)
-                      options)
-           :aliases (concat
-                     (map keyword arguments)
-                     (:launchpad/aliases deps-edn))
-           :env (into {} (System/getenv)))))
+    (-> ctx
+        (update :env (fnil into {}) (System/getenv))
+        (update :aliases (fnil into []) (map keyword arguments))
+        (assoc :options (if (:emacs options)
+                          (assoc options
+                                 :cider-nrepl true
+                                 :refactor-nrepl true
+                                 :cider-connect true)
+                          options)))))
 
 (defn wait-for-nrepl [{:keys [nrepl-port] :as ctx}]
   (let [timeout 300000]
@@ -185,7 +185,9 @@
            "-J-XX:-OmitStackTraceInFastThrow"
            (str "-J-Dlambdaisland.launchpad.aliases=" (str/join "," (map #(subs (str %) 1) aliases)))
            #_(str "-J-Dlambdaisland.launchpad.extra-dep-source=" (pr-str {:deps extra-deps}))
-           (str/join (cons "-A" aliases))]
+           ]
+    (seq aliases)
+    (conj (str/join (cons "-A" aliases)))
     extra-deps
     (into ["-Sdeps" (pr-str {:deps extra-deps})])
     :->
@@ -202,15 +204,22 @@
   (as-> ctx <>
     (update <> :extra-deps assoc 'com.lambdaisland/classpath classpath-coords)
     (update <> :eval-forms (fnil conj [])
-            '(require 'lambdaisland.classpath.watch-deps)
-            `(lambdaisland.classpath.watch-deps/start! {:aliases ~(mapv keyword aliases)
-                                                        :extra {:deps '~(:extra-deps <>)}
-                                                        :include-local-roots? true}))))
+            '(require 'lambdaisland.classpath.watch-deps
+                      'lambdaisland.launchpad.deps)
+            `(lambdaisland.classpath.watch-deps/start!
+              ~{:aliases (mapv keyword aliases)
+                :include-local-roots? true
+                :basis-fn 'lambdaisland.launchpad.deps/basis
+                :watch-paths (when (.exists (io/file "deps.local.edn"))
+                               ['(lambdaisland.classpath.watch-deps/canonical-path "deps.local.edn")])
+                :launchpad/extra-deps `'~(:extra-deps <>)}))))
 
 (defn start-shadow-build [{:keys [deps-edn aliases] :as ctx}]
   (let [build-ids (concat (:launchpad/shadow-build-ids deps-edn)
-                          (mapcat #(get-in deps-edn [:aliases % :launchpad/shadow-build-ids]) aliases))
-        ]
+                          (mapcat #(get-in deps-edn [:aliases % :launchpad/shadow-build-ids]) aliases))]
+    ;; FIXME filter this down to builds that exist in the combined shadow config
+    (when (seq build-ids)
+      (debug "Starting shadow-cljs builds" build-ids))
     (if (seq build-ids)
       (-> ctx
           (update :middleware (fnil conj []) 'shadow.cljs.devtools.server.nrepl/middleware)
@@ -281,7 +290,8 @@
           project-root (find-project-root)}}]
 
    (reduce #(%2 %1)
-           {:executable (or executable
+           {:main-opts *command-line-args*
+            :executable (or executable
                             (str/replace *file*
                                          (str project-root "/")
                                          ""))
@@ -289,8 +299,12 @@
            steps)
    @(promise)))
 
+
+
+
 (comment
-  (let [options {:cider-nrepl true
+  (let [options {:main-opts *command-line-args*
+                 :cider-nrepl true
                  :refactor-nrepl true
                  :env (into {} (System/getenv))
                  :project-root project-root}]

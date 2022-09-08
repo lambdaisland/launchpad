@@ -99,3 +99,5 @@
           (recur))))))
 
 #_(start-builds :main)
+
+(require 'shadow.build)
