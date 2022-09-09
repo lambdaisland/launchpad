@@ -68,7 +68,7 @@ docker-compose, ensure environment variables are set up? You do that here.
 ```clj
 #!/usr/bin/env bb
 
-('require '[lambdaisland.launchpad :as launchpad])
+(require '[lambdaisland.launchpad :as launchpad])
 
 (launchpad/main {})
 
@@ -132,6 +132,35 @@ You don't have to stop there, you could add a `dev/user.clj` (add "dev" to your
 `:paths` in that case), add other useful scripts or repl sessions, maybe you
 even want to put cross-project integration tests in this repo, but the above is
 the main stuff you need.
+
+## Using Launchpad
+
+When invoking `bin/launchpad` you pass it any aliases you want to start, plus a
+number of optional flags. These currently allow injecting the CIDER and/or
+refactor-nrepl middleware, which will suffice to use launchpad with Emacs/CIDER,
+VS Code/Calva, and probably others.
+
+Please do file issues on Github for your favorite editor environment, we want to
+eventually support every Clojure editor out there with a non-negligible user
+base.
+
+Emacs is currently best supported, since we are able to query Emacs to find
+which versions of cider-nrepl and refactor-nrepl we should inject, and are also
+able to instruct Emacs to connect to the REPL, so the whole process is smooth
+and automated. This level of integration will not be possible with every editor,
+but we can look into what options we have.
+
+```clj
+➜ bin/launchpad --help
+bin/launchpad <options> [proj1|proj2]+
+
+  -h, --help
+  -v, --verbose         Print debug information
+      --cider-nrepl     Include the CIDER nREPL middleware
+      --refactor-nrepl  Include the refactor-nrepl middleware
+      --cider-connect   Automatically connect CIDER
+      --emacs           Shorthand for --cider-nrepl --refactor-nrepl --cider-connect
+```
 
 <!-- opencollective -->
 ## Lambda Island Open Source

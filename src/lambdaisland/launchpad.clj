@@ -24,10 +24,12 @@
 (def classpath-coords
   {:mvn/version "0.4.44"}
   #_{:local/root "/home/arne/github/lambdaisland/classpath"})
-(def launchpad-coords {
-                       ;; :git/url "https://github.com/lambdaisland/launchpad"
-                       ;; :git/sha "176b4678c201e2a04e9110c27b39628fd7342a60"
-                       :local/root "/home/arne/github/lambdaisland/launchpad"})
+
+(def default-launchpad-coords
+  "Version coordinates for Launchpad, which we use to inject ourselves into the
+  project dependencies for runtime support. Only used when we are unable to find
+  the current version in `bb.edn`"
+  {:mvn/version "RELEASE"})
 
 (def verbose? (some #{"-v" "--verbose"} *command-line-args*))
 
@@ -230,8 +232,14 @@
                     ~@build-ids)))
       ctx)))
 
+(defn find-launchpad-coords []
+  (or
+   (when (.exists (io/file "bb.edn"))
+     (get-in (edn/read-string (slurp "bb.edn")) [:deps 'com.lambdaisland/launchpad]))
+   default-launchpad-coords))
+
 (defn include-launchpad-deps [{:keys [extra-deps] :as ctx}]
-  (update ctx :extra-deps assoc 'com.lambdaisland/launchpad launchpad-coords))
+  (update ctx :extra-deps assoc 'com.lambdaisland/launchpad (find-launchpad-coords)))
 
 (defn start-process [{:keys [options aliases nrepl-port env] :as ctx}]
   (let [args (clojure-cli-args ctx)]
