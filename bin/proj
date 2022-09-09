@@ -4,10 +4,11 @@
   (:require [lioss.main :as lioss]))
 
 (lioss/main
- {:license          :mpl
-  :inception-year   2022
-  :description      ""
-  :group-id         "com.lambdaisland"})
+ {:license           :mpl
+  :inception-year    2022
+  :description       "Clojure dev process launcher"
+  :group-id          "com.lambdaisland"
+  :version-qualifier "alpha"})
 
 ;; Local Variables:
 ;; mode:clojure

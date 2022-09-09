@@ -37,32 +37,101 @@ and hooking up your editor (if supported, otherwise a manual connect to nREPL is
 needed).
 
 It takes information from `deps.edn` (checked in) and `deps.local.edn` (not
-checked in, not yet implemented) and arguments passed in on the command line to
-determine which modules to include, which middleware to add to nREPL, which
-shadow-cljs builds to start, etc.
+checked in) and arguments passed in on the command line to determine which
+modules to include, which middleware to add to nREPL, which shadow-cljs builds
+to start, etc.
 
+Launchpad integrates with `lambdaisland.classpath` to provide hot-reloading of
+`deps.edn` and `deps.local.edn`, so you can add dependencies to your project,
+switch a dependency to a newer version, or from a Maven-provided jar to a local
+checkout, all without restarting your process and REPL. You can even activate
+additional aliases without restarting. How cool is that?
 
-## Features
+## Project setup
 
-<!-- installation -->
-## Installation
+See `template` for an example setup, you need a few different pieces.
 
-To use the latest release, add the following to your `bb.edn`: 
+* `bb.edn`
 
+```clj
+{:deps {com.lambdaisland/launchpad { ... }}}
 ```
-com.lambdaisland/launchpad {:mvn/version "0.0.0"}
+
+* `bin/launchpad`
+
+This is the default convention for launchpad-based projects, it provides a
+recognizable, predictable entry point that people will be looking for in your
+project, so use it. This is a simple babashka script invoking launchpad, but
+there's lots of room to customize this. Want to check the Java version, launch
+docker-compose, ensure environment variables are set up? You do that here.
+
+```clj
+#!/usr/bin/env bb
+
+('require '[lambdaisland.launchpad :as launchpad])
+
+(launchpad/main {})
+
+;; (launchpad/main {:steps (into [(partial launchpad/ensure-java-version 17)]
+;;                               launchpad/default-steps)})
 ```
 
-or add the following to your `project.clj` ([Leiningen](https://leiningen.org/))
+* `deps.edn`
 
+You need a top-level `deps.edn`, where you reference your sub-projects with
+aliases and `:local/root`.
+
+```clj
+{:deps
+ {... good place for dev tooling like portal, scope-capture ...}
+
+ ;; Monorepo setup with two subprojects, if you have a multi-repo setup then use
+ ;; paths like `"../proj1"`
+ :aliases
+ {:proj1
+  {:deps {com.example/proj1 {:local/root "proj1"}}}
+
+  :proj2
+  {:deps {com.example/proj2 {:local/root "proj2"}}}}}
 ```
-[com.lambdaisland/launchpad "0.0.0"]
+
+`proj1` and `proj2` are then folders with their own `deps.edn`, `src`, etc.
+
+* `.gitignore`
+
+Make sure to `.gitignore` the `deps.local.edn` file, this is where you can do
+individual configuration.
+
+```shell
+echo deps.local.edn >> .gitignore
 ```
-<!-- /installation -->
 
-## Rationale
+* `deps.local.edn`
 
-## Usage
+This follows the structure like `deps.edn`, and gets passed to tools.deps as an
+extra source, but there are a few special keys here that you can use to
+configure launchpad.
+
+```clj
+{;; regular deps.edn stuff will work in here
+ :deps {}
+ :aliases {}
+
+ ;; but some extra keys are supported to influence launchpad itself
+ :launchpad/aliases [:proj1] ; additional aliases, will be added to whatever
+                             ; aliases you specify on the command line
+ :launchpad/main-opts ["--emacs"] ; additional CLI flags, so you can encode your
+                                  ; own preferences
+ :launchpad/shadow-build-ids [] ; which shadow builds to start, although it may
+                                ; be preferable to configure this as part of
+                                ; specific aliases in your main deps.edn
+ }
+```
+
+You don't have to stop there, you could add a `dev/user.clj` (add "dev" to your
+`:paths` in that case), add other useful scripts or repl sessions, maybe you
+even want to put cross-project integration tests in this repo, but the above is
+the main stuff you need.
 
 <!-- opencollective -->
 ## Lambda Island Open Source
