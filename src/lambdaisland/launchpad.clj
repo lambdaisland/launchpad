@@ -306,23 +306,3 @@
             :project-root project-root}
            steps)
    @(promise)))
-
-
-
-
-(comment
-  (let [options {:main-opts *command-line-args*
-                 :cider-nrepl true
-                 :refactor-nrepl true
-                 :env (into {} (System/getenv))
-                 :project-root project-root}]
-    (reduce #(%2 %1)
-            {:options options}
-            [find-free-nrepl-port
-             compute-middleware
-             compute-extra-deps
-             #_start-nrepl
-             #_wait-for-nrepl
-             clojure-cli-args]))
-
-  )

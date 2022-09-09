@@ -162,6 +162,23 @@ bin/launchpad <options> [proj1|proj2]+
       --emacs           Shorthand for --cider-nrepl --refactor-nrepl --cider-connect
 ```
 
+For example
+
+```
+➜ bin/launchpad backend frontend --emacs
+[INFO] clojure -J-XX:-OmitStackTraceInFastThrow -J-Dlambdaisland.launchpad.aliases=backend,frontend -A:backend:frontend -Sdeps '{:deps {cider/cider-nrepl #:mvn{:version "0.28.5"}, refactor-nrepl/refactor-nrepl #:mvn{:version "3.5.2"}, com.lambdaisland/classpath #:mvn{:version "0.4.44"}, com.lambdaisland/launchpad #:local{:root "/home/arne/github/lambdaisland/launchpad"}}}' -M -e '(do (require (quote lambdaisland.classpath.watch-deps) (quote lambdaisland.launchpad.deps)) (lambdaisland.classpath.watch-deps/start! {:aliases [:backend :frontend], :include-local-roots? true, :basis-fn lambdaisland.launchpad.deps/basis, :watch-paths [(lambdaisland.classpath.watch-deps/canonical-path "deps.local.edn")], :launchpad/extra-deps (quote {cider/cider-nrepl #:mvn{:version "0.28.5"}, refactor-nrepl/refactor-nrepl #:mvn{:version "3.5.2"}, com.lambdaisland/classpath #:mvn{:version "0.4.44"}})}) (require (quote nrepl.cmdline)) (nrepl.cmdline/-main "--port" "41545" "--middleware" "[cider.nrepl/cider-middleware refactor-nrepl.middleware/wrap-refactor]"))'
+nREPL server started on port 41545 on host localhost - nrepl://localhost:41545
+```
+
+At this point in Emacs you'll see this pop up:
+
+```
+[nREPL] Establishing direct connection to localhost:41545 ...
+[nREPL] Direct connection to localhost:41545 established
+```
+
+For other editors connect to the given port manually.
+
 <!-- opencollective -->
 ## Lambda Island Open Source
 
