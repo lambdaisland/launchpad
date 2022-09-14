@@ -19,6 +19,7 @@
    [nil "--cider-connect" "Automatically connect CIDER"]
    [nil "--emacs" "Shorthand for --cider-nrepl --refactor-nrepl --cider-connect"]])
 
+(def default-nrepl-version "1.0.0")
 (def default-cider-version "0.28.3")
 (def default-refactor-nrepl-version "3.5.2")
 (def classpath-coords
@@ -119,6 +120,8 @@
 (defn compute-extra-deps [{:keys [options] :as ctx}]
   (let [assoc-dep #(update %1 :extra-deps assoc %2 %3)]
     (cond-> ctx
+      true
+      (assoc-dep 'nrepl/nrepl {:mvn/version default-nrepl-version})
       (:cider-nrepl options)
       (assoc-dep 'cider/cider-nrepl {:mvn/version (or (emacs-cider-version) default-cider-version)})
       (:refactor-nrepl options)
