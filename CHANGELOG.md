@@ -1,4 +1,4 @@
-# Unreleased
+# 0.2.20-alpha (2022-09-15 / d95503f)
 
 ## Added
 - Add nrepl/nrepl as an extra dependency by default (#1)
