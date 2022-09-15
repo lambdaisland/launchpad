@@ -1,6 +1,7 @@
 # Unreleased
 
 ## Added
+- Add nrepl/nrepl as an extra dependency by default (#1)
 
 ## Fixed
 
