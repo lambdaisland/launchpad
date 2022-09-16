@@ -8,7 +8,8 @@
             [clojure.java.io :as io]
             [clojure.java.shell :as shell]
             [clojure.string :as str]
-            [clojure.tools.cli :as tools-cli])
+            [clojure.tools.cli :as tools-cli]
+            [lambdaisland.dotenv :as dotenv])
   (:import java.net.ServerSocket))
 
 (def cli-opts
@@ -22,9 +23,9 @@
 (def default-nrepl-version "1.0.0")
 (def default-cider-version "0.28.3")
 (def default-refactor-nrepl-version "3.5.2")
-(def classpath-coords
-  {:mvn/version "0.4.44"}
-  #_{:local/root "/home/arne/github/lambdaisland/classpath"})
+
+(def classpath-coords {:mvn/version "0.4.44"})
+(def jnr-posix-coords {:mvn/version "3.1.15"})
 
 (def default-launchpad-coords
   "Version coordinates for Launchpad, which we use to inject ourselves into the
@@ -185,39 +186,76 @@
   (Thread/sleep 3000)
   ctx)
 
-(defn clojure-cli-args [{:keys [aliases nrepl-port middleware extra-deps eval-forms] :as ctx}]
-  (cond-> ["clojure"
-           "-J-XX:-OmitStackTraceInFastThrow"
-           (str "-J-Dlambdaisland.launchpad.aliases=" (str/join "," (map #(subs (str %) 1) aliases)))
-           #_(str "-J-Dlambdaisland.launchpad.extra-dep-source=" (pr-str {:deps extra-deps}))
-           ]
+(defn disable-stack-trace-elision [ctx]
+  (update ctx
+          :java-args conj
+          "-XX:-OmitStackTraceInFastThrow"))
+
+(defn inject-aliases-as-property [{:keys [aliases] :as ctx}]
+  (update ctx
+          :java-args conj
+          (str "-Dlambdaisland.launchpad.aliases=" (str/join "," (map #(subs (str %) 1) aliases)))))
+
+(defn include-watcher [{:keys [watch-handlers] :as ctx}]
+  (if watch-handlers
+    (-> ctx
+        (update :requires conj 'lambdaisland.launchpad.watcher)
+        (update :eval-forms (fnil conj [])
+                `(lambdaisland.launchpad.watcher/watch! ~watch-handlers)))))
+
+(defn clojure-cli-args [{:keys [aliases requires nrepl-port java-args middleware extra-deps eval-forms] :as ctx}]
+  (cond-> ["clojure"]
+    :-> (into (map #(str "-J" %)) java-args)
     (seq aliases)
     (conj (str/join (cons "-A" aliases)))
     extra-deps
     (into ["-Sdeps" (pr-str {:deps extra-deps})])
     :->
-    (into ["-M" "-e" (pr-str `(do ~@eval-forms))])
+    (into ["-M" "-e" (pr-str `(do ~(when (seq requires)
+                                     (list* 'require (map #(list 'quote %) requires)))
+                                  ~@eval-forms))])
     middleware
     (into [])))
 
 (defn run-nrepl-server [{:keys [nrepl-port middleware] :as ctx}]
-  (update ctx :eval-forms (fnil conj [])
-          '(require 'nrepl.cmdline)
-          `(nrepl.cmdline/-main "--port" ~(str nrepl-port) "--middleware" ~(pr-str middleware))))
+  (-> ctx
+      (update :requires conj 'nrepl.cmdline)
+      (update :eval-forms (fnil conj [])
+              `(nrepl.cmdline/-main "--port" ~(str nrepl-port) "--middleware" ~(pr-str middleware)))))
+
+(defn register-watch-handlers [ctx handlers]
+  (update ctx
+          :watch-handlers
+          (fn [h]
+            (if h
+              `(~'merge ~h ~handlers)
+              handlers))))
 
 (defn include-hot-reload-deps [{:keys [extra-deps aliases] :as ctx}]
   (as-> ctx <>
     (update <> :extra-deps assoc 'com.lambdaisland/classpath classpath-coords)
-    (update <> :eval-forms (fnil conj [])
-            '(require 'lambdaisland.classpath.watch-deps
-                      'lambdaisland.launchpad.deps)
-            `(lambdaisland.classpath.watch-deps/start!
-              ~{:aliases (mapv keyword aliases)
-                :include-local-roots? true
-                :basis-fn 'lambdaisland.launchpad.deps/basis
-                :watch-paths (when (.exists (io/file "deps.local.edn"))
-                               ['(lambdaisland.classpath.watch-deps/canonical-path "deps.local.edn")])
-                :launchpad/extra-deps `'~(:extra-deps <>)}))))
+    (update <> :requires conj 'lambdaisland.launchpad.deps)
+    (register-watch-handlers
+     <>
+     `(lambdaisland.launchpad.deps/watch-handlers
+       ~{:aliases (mapv keyword aliases)
+         :include-local-roots? true
+         :basis-fn 'lambdaisland.launchpad.deps/basis
+         :watch-paths ['(lambdaisland.classpath.watch-deps/canonical-path "deps.local.edn")]
+         :launchpad/extra-deps `'~(:extra-deps <>)}))))
+
+(defn watch-dotenv [ctx]
+  (-> ctx
+      (update :extra-deps assoc 'com.github.jnr/jnr-posix jnr-posix-coords)
+      (update :java-args conj
+              "--add-opens=java.base/java.lang=ALL-UNNAMED"
+              "--add-opens=java.base/java.util=ALL-UNNAMED")
+      (update :env #(apply merge % (map (fn [p]
+                                          (when (.exists (io/file p))
+                                            (dotenv/parse-dotenv (slurp p))))
+                                        [".env" ".env.local"])))
+      (update :requires conj 'lambdaisland.launchpad.env)
+      (register-watch-handlers '(lambdaisland.launchpad.env/watch-handlers))))
 
 (defn start-shadow-build [{:keys [deps-edn aliases] :as ctx}]
   (let [build-ids (concat (:launchpad/shadow-build-ids deps-edn)
@@ -279,14 +317,21 @@
                     read-deps-edn
                     handle-cli-args
                     compute-middleware
+                    ;; inject dependencies and enable behavior
                     compute-extra-deps
                     include-hot-reload-deps
                     include-launchpad-deps
+                    watch-dotenv
+                    ;; extra java flags
+                    disable-stack-trace-elision
+                    inject-aliases-as-property
+                    ;; start the actual process
+                    include-watcher
                     run-nrepl-server
                     start-process
                     wait-for-nrepl
-                    maybe-connect-emacs
-                    ])
+                    ;; stuff that happens after the server is up
+                    maybe-connect-emacs])
 
 (defn find-project-root []
   (loop [dir (.getParent (io/file *file*))]
