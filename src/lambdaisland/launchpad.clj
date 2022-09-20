@@ -7,6 +7,7 @@
             [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.java.shell :as shell]
+            [clojure.pprint :as pprint]
             [clojure.string :as str]
             [clojure.tools.cli :as tools-cli]
             [lambdaisland.dotenv :as dotenv])
@@ -258,8 +259,10 @@
       (register-watch-handlers '(lambdaisland.launchpad.env/watch-handlers))))
 
 (defn start-shadow-build [{:keys [deps-edn aliases] :as ctx}]
-  (let [build-ids (concat (:launchpad/shadow-build-ids deps-edn)
-                          (mapcat #(get-in deps-edn [:aliases % :launchpad/shadow-build-ids]) aliases))]
+  (let [build-ids (->> aliases
+                       (mapcat #(get-in deps-edn [:aliases % :launchpad/shadow-build-ids]))
+                       (concat (:launchpad/shadow-build-ids deps-edn))
+                       distinct)]
     ;; FIXME filter this down to builds that exist in the combined shadow config
     (when (seq build-ids)
       (debug "Starting shadow-cljs builds" build-ids))
@@ -269,8 +272,10 @@
           (assoc :shadow-cljs/build-ids build-ids)
           (update :eval-forms (fnil conj [])
                   '(require 'lambdaisland.launchpad.shadow)
-                  `(lambdaisland.launchpad.shadow/start-builds!
-                    ~@build-ids)))
+                  `(apply
+                    lambdaisland.launchpad.shadow/start-builds!
+                    (filter (set (keys (:builds (lambdaisland.launchpad.shadow/merged-config))))
+                            ~(vec build-ids)))))
       ctx)))
 
 (defn find-launchpad-coords []
@@ -313,25 +318,41 @@
                                             :project-dir ~project-root)))))))
   ctx)
 
-(def default-steps [find-free-nrepl-port
-                    read-deps-edn
-                    handle-cli-args
-                    compute-middleware
-                    ;; inject dependencies and enable behavior
-                    compute-extra-deps
-                    include-hot-reload-deps
-                    include-launchpad-deps
-                    watch-dotenv
-                    ;; extra java flags
-                    disable-stack-trace-elision
-                    inject-aliases-as-property
-                    ;; start the actual process
-                    include-watcher
-                    run-nrepl-server
-                    start-process
-                    wait-for-nrepl
-                    ;; stuff that happens after the server is up
-                    maybe-connect-emacs])
+(defn print-summary [ctx]
+  (apply println "Aliases: " (:aliases ctx))
+  (apply println "Java flags: " (:java-args ctx))
+  (apply println "Middleware: " (:middleware ctx))
+  (println "Deps:")
+  (pprint/pprint (:extra-deps ctx))
+  (println "Eval:")
+  (pprint/pprint (:eval-forms ctx))
+  ctx)
+
+(def before-steps [find-free-nrepl-port
+                   read-deps-edn
+                   handle-cli-args
+                   compute-middleware
+                   ;; inject dependencies and enable behavior
+                   compute-extra-deps
+                   include-hot-reload-deps
+                   include-launchpad-deps
+                   watch-dotenv
+                   start-shadow-build
+                   ;; extra java flags
+                   disable-stack-trace-elision
+                   inject-aliases-as-property
+                   ;; start the actual process
+                   include-watcher
+                   run-nrepl-server
+                   print-summary])
+
+(def after-steps [wait-for-nrepl
+                  ;; stuff that happens after the server is up
+                  maybe-connect-emacs])
+
+(def default-steps (concat before-steps
+                           [start-process]
+                           after-steps))
 
 (defn find-project-root []
   (loop [dir (.getParent (io/file *file*))]

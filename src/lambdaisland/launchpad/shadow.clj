@@ -53,8 +53,12 @@
   (-> (apply
        merge-with
        (fn [a b]
-         (if (and (map? a) (map? b))
+         (cond
+           (and (map? a) (map? b))
            (merge a b)
+           (and (set? a) (set? b))
+           (into a b)
+           :else
            b))
        (for [module-path module-paths
              :let [module-root (.toAbsolutePath (Path/of module-path (into-array String [])))
@@ -74,7 +78,9 @@
                                        (keyword module-name (name k)))]
                                [build-id
                                 (assoc (update-build-keys process-root module-root v)
-                                       :build-id build-id)])))
+                                       :build-id build-id
+                                       :js-options {:js-package-dirs [(str module-path "/node_modules")]})])))
+
                       builds))))))
       (assoc :deps {})
       (dissoc :source-paths :dependencies)))
