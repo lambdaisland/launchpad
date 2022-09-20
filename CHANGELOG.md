@@ -2,9 +2,11 @@
 
 ## Added
 
-## Fixed
+- Watch .env / .env.local
 
 ## Changed
+
+- Improve shadow-cljs support
 
 # 0.2.20-alpha (2022-09-15 / d95503f)
 
