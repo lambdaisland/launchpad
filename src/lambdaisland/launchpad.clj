@@ -22,8 +22,12 @@
    [nil "--emacs" "Shorthand for --cider-nrepl --refactor-nrepl --cider-connect"]])
 
 (def default-nrepl-version "1.0.0")
-(def default-cider-version "0.28.3")
-(def default-refactor-nrepl-version "3.5.2")
+
+;; Unless we have a mechanism of automatically updating these I would use
+;; `RELEASE` here, so non-emacs user always default to the latest version. This
+;; is a good candidate for making this configurable, for explicitness.
+(def default-cider-version "RELEASE")
+(def default-refactor-nrepl-version "RELEASE")
 
 (def classpath-coords {:mvn/version "0.4.44"})
 (def jnr-posix-coords {:mvn/version "3.1.15"})
@@ -88,26 +92,30 @@
   "Load/require an emacs package, will return `true` on success, `false` on failure.
   Throws if `emacsclient` is not found."
   [lib]
-  (= (str lib) (str/trim (eval-emacs `(~'require '~lib)))))
+  (try
+    (= (str lib) (str/trim (eval-emacs `(~'require '~lib))))
+    (catch java.io.IOException e
+      ;; We swallow this because if Emacs isn't installed we want to simply
+      ;; return `nil`. People might want the CIDER or refactor-nrepl middlewares
+      ;; even though they are not running Emacs.
+      )))
 
 (defn emacs-cider-version
   "Find the CIDER version that is currently in use by the running Emacs instance."
   []
-  (if (emacs-require 'cider)
+  (when (emacs-require 'cider)
     (read-string
      (eval-emacs '(if (boundp 'cider-required-middleware-version)
                     cider-required-middleware-version
-                    (upcase cider-version))))
-    (warn "Failed to load `cider` in Emacs, is it installed?")))
+                    (upcase cider-version))))))
 
 (defn emacs-refactor-nrepl-version
   "Find the refactor-nrepl version that is required by the `clj-refactor` version
   installed in Emacs."
   []
-  (if (emacs-require 'clj-refactor)
+  (when (emacs-require 'clj-refactor)
     (read-string
-     (eval-emacs 'cljr-injected-middleware-version))
-    (warn "Failed to load `clj-refactor` in Emacs, is it installed?")))
+     (eval-emacs 'cljr-injected-middleware-version))))
 
 (defn compute-middleware
   "Figure out the nREPL middleware based on CLI flags"

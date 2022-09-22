@@ -1,10 +1,9 @@
 # Unreleased
 
-## Added
-
 ## Fixed
 
-## Changed
+- Make sure `--cider-nrepl` works, even when `emacsclient` is not available,
+  e.g. for Calva
 
 # 0.3.26-alpha (2022-09-20 / 79a8d9a)
 
