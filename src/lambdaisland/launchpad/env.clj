@@ -10,7 +10,8 @@
   get to the underlying setenv system call, for good measure.
 
   But hey it works!"
-  (:require [lambdaisland.dotenv :as dotenv])
+  (:require [lambdaisland.dotenv :as dotenv]
+            [lambdaisland.classpath.watch-deps :as watch-deps])
   (:import (java.nio.file Path Files LinkOption)))
 
 (set! *warn-on-reflection* true)
@@ -70,7 +71,7 @@
 (defn exists?
   "Does the given path exist."
   [path]
-  (Files/exists path (into-array LinkOption [])))
+  (Files/exists (watch-deps/path path) (into-array LinkOption [])))
 
 (defn dotenv-watch-handler [paths]
   (let [paths (map #(Path/of % (into-array String [])) paths)]
