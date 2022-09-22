@@ -250,7 +250,12 @@
        ~{:aliases (mapv keyword aliases)
          :include-local-roots? true
          :basis-fn 'lambdaisland.launchpad.deps/basis
-         :watch-paths ['(lambdaisland.classpath.watch-deps/canonical-path "deps.local.edn")]
+         :watch-paths (when (.exists (io/file "deps.local.edn"))
+                        ;; FIXME: this means we don't "see" deps.local.edn if it
+                        ;; gets created after launchpad started, we can do
+                        ;; better than that.
+                        ['(lambdaisland.classpath.watch-deps/canonical-path "deps.local.edn")]
+                        [])
          :launchpad/extra-deps `'~(:extra-deps <>)}))))
 
 (defn watch-dotenv [ctx]
