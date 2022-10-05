@@ -19,7 +19,8 @@
    [nil "--cider-nrepl" "Include the CIDER nREPL middleware"]
    [nil "--refactor-nrepl" "Include the refactor-nrepl middleware"]
    [nil "--cider-connect" "Automatically connect CIDER"]
-   [nil "--emacs" "Shorthand for --cider-nrepl --refactor-nrepl --cider-connect"]])
+   [nil "--emacs" "Shorthand for --cider-nrepl --refactor-nrepl --cider-connect"]
+   [nil "--go" "Call (user/go) on boot"]])
 
 (def default-nrepl-version "1.0.0")
 
@@ -226,6 +227,12 @@
     middleware
     (into [])))
 
+(defn maybe-go [{:keys [options] :as ctx}]
+  (cond-> ctx
+    (:go options)
+    (update :eval-forms (fnil conj [])
+            '(user/go))))
+
 (defn run-nrepl-server [{:keys [nrepl-port middleware] :as ctx}]
   (-> ctx
       (update :requires conj 'nrepl.cmdline)
@@ -302,7 +309,7 @@
 
 (defn start-process [{:keys [options aliases nrepl-port env] :as ctx}]
   (let [args (clojure-cli-args ctx)]
-    (apply info (map shellquote args))
+    (apply debug (map shellquote args))
     (let [process (process args {:env env :out :inherit :err :inherit})]
       (future
         (System/exit (.waitFor process)))
@@ -351,6 +358,7 @@
                    include-launchpad-deps
                    watch-dotenv
                    start-shadow-build
+                   maybe-go
                    ;; extra java flags
                    disable-stack-trace-elision
                    inject-aliases-as-property
