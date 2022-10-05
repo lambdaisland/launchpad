@@ -339,13 +339,16 @@
   ctx)
 
 (defn print-summary [ctx]
-  (apply println "Aliases: " (:aliases ctx))
-  (apply println "Java flags: " (:java-args ctx))
-  (apply println "Middleware: " (:middleware ctx))
-  (println "Deps:")
-  (pprint/pprint (:extra-deps ctx))
-  (println "Eval:")
-  (pprint/pprint (:eval-forms ctx))
+  (println "Aliases:")
+  (doseq [a (:aliases ctx)] (println "-" a))
+  #_(apply println "Java flags: " (:java-args ctx))
+  (println "\nMiddleware: " )
+  (doseq [a (:middleware ctx)] (println "-" a))
+  (print "\nDeps:")
+  (pprint/print-table (map (fn [[k v]]
+                             {:lib k
+                              :coords v})
+                           (:extra-deps ctx)))
   ctx)
 
 (def before-steps [find-free-nrepl-port
