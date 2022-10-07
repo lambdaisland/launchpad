@@ -1,10 +1,15 @@
 # Unreleased
 
-## Added
-
 ## Fixed
 
-## Changed
+- Fixed some of the watching behavior
+- Watch files even if they don't yet exist (pick up when they get created)
+- Better deal with `:aliases {...}` in `deps.local.edn`
+- Clean up output
+
+## Added
+
+- `--go` flag, automatically call `(user/go)`
 
 # 0.7.39-alpha (2022-09-22 / 1ec66df)
 
