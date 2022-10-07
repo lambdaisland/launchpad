@@ -16,7 +16,8 @@
 
 (defn watch-handlers [opts]
   (let [basis (basis opts)
-        deps-paths (cond-> [(watch-deps/path watch-deps/process-root-path "deps.edn")]
+        deps-paths (cond-> [(watch-deps/path watch-deps/process-root-path "deps.edn")
+                            (watch-deps/path watch-deps/process-root-path "deps.local.edn")]
                      (:include-local-roots? opts)
                      (into (->> (vals (:libs basis))
                                 (keep :local/root)

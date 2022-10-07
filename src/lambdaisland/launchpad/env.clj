@@ -84,8 +84,5 @@
 
 (defn watch-handlers []
   (let [h (dotenv-watch-handler [".env" ".env.local"])]
-    (cond-> {}
-      (exists? ".env")
-      (assoc ".env" h)
-      (exists? ".env.local")
-      (assoc ".env.local" h))))
+    {".env" h
+     ".env.local" h}))

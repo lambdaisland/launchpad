@@ -157,7 +157,13 @@
                                          (into a b)
                                          :else
                                          b))
-                                     deps-edn deps-local)))))
+                                     deps-edn deps-local))
+        ;; It seems like if we set `{:aliases {}}` via `-Sdeps` it overrides
+        ;; deps.edn aliases, rather than merging them, so we merge them
+        ;; ourselves and pass them all to -Sdeps. Needs more testing to see if
+        ;; this is really necessary.
+        (assoc :alias-defs (merge (:aliases deps-edn)
+                                  (:aliases deps-local))))))
 
 (defn handle-cli-args [{:keys [executable project-root deps-edn main-opts] :as ctx}]
   (let [{:keys [options
@@ -213,13 +219,14 @@
         (update :eval-forms (fnil conj [])
                 `(lambdaisland.launchpad.watcher/watch! ~watch-handlers)))))
 
-(defn clojure-cli-args [{:keys [aliases requires nrepl-port java-args middleware extra-deps eval-forms] :as ctx}]
+(defn clojure-cli-args [{:keys [aliases requires nrepl-port java-args middleware extra-deps alias-defs eval-forms] :as ctx}]
   (cond-> ["clojure"]
     :-> (into (map #(str "-J" %)) java-args)
     (seq aliases)
     (conj (str/join (cons "-A" aliases)))
     extra-deps
-    (into ["-Sdeps" (pr-str {:deps extra-deps})])
+    (into ["-Sdeps" (pr-str {:deps extra-deps
+                             :aliases alias-defs})])
     :->
     (into ["-M" "-e" (pr-str `(do ~(when (seq requires)
                                      (list* 'require (map #(list 'quote %) requires)))
@@ -344,7 +351,7 @@
   #_(apply println "Java flags: " (:java-args ctx))
   (println "\nMiddleware: " )
   (doseq [a (:middleware ctx)] (println "-" a))
-  (print "\nDeps:")
+  (print "\nExtra Deps:")
   (pprint/print-table (map (fn [[k v]]
                              {:lib k
                               :coords v})
