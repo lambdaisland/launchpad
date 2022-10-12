@@ -318,8 +318,6 @@
   (let [args (clojure-cli-args ctx)]
     (apply debug (map shellquote args))
     (let [process (process args {:env env :out :inherit :err :inherit})]
-      (future
-        (System/exit (.waitFor process)))
       (assoc ctx :clojure-process process))))
 
 (defn maybe-connect-emacs [{:keys [options nrepl-port project-root] :as ctx}]
@@ -397,12 +395,15 @@
      :or {steps default-steps
           project-root (find-project-root)}}]
 
-   (reduce #(%2 %1)
-           {:main-opts *command-line-args*
-            :executable (or executable
-                            (str/replace *file*
-                                         (str project-root "/")
-                                         ""))
-            :project-root project-root}
-           steps)
-   @(promise)))
+   (let [ctx (reduce #(%2 %1)
+                     {:main-opts *command-line-args*
+                      :executable (or executable
+                                      (str/replace *file*
+                                                   (str project-root "/")
+                                                   ""))
+                      :project-root project-root}
+                     steps)
+         process (:clojure-process ctx)]
+     (.addShutdownHook (Runtime/getRuntime)
+                       (Thread. (fn [] (.destroy (:proc process)))))
+     (System/exit (:exit @process)))))

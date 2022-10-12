@@ -1,10 +1,9 @@
 # Unreleased
 
-## Added
-
 ## Fixed
 
-## Changed
+- Couple the lifetime of the Clojure process to the lifetime of launchpad, exit
+  launchpad when the process dies, and kill the process when launchpad exits
 
 # 0.8.46-alpha (2022-10-07 / 4c68918)
 
