@@ -12,7 +12,8 @@
            java.nio.file.Files
            java.nio.file.Paths
            java.nio.file.Path
-           java.io.File))
+           java.io.File
+           io.methvin.watcher.DirectoryWatcher))
 
 (defonce watchers (atom nil))
 
@@ -23,6 +24,27 @@
   (.getParent (io/file (canonical-path p))))
 
 (require 'clojure.pprint)
+
+(defn build-watcher
+  "Creates a watcher taking a callback function `cb` that will be invoked
+  whenever a file in one of the `paths` chages.
+
+  Not meant to be called directly but use `watch` or `watch-blocking` instead."
+  [cb paths]
+  (-> (DirectoryWatcher/builder)
+      (.paths (map #(Path/of % (into-array String [])) paths))
+      (.listener (#'beholder/fn->listener cb))
+      #_(.fileHashing false)
+      (.build)))
+
+(defn watch
+  "Creates a directory watcher that will invoke the callback function `cb` whenever
+  a file event in one of the `paths` occurs. Watching will happen asynchronously.
+
+  Returns a directory watcher that can be passed to `stop` to stop the watch."
+  [cb & paths]
+  (doto (build-watcher cb paths)
+    (.watchAsync)))
 
 (defn watch!
   "Watch a number of files, takes a map from filename (string) to
@@ -41,14 +63,17 @@
                (run! beholder/stop w))
              (doall
               (for [dir directories]
-                (beholder/watch
-                 (fn [{:keys [type path] :as event}]
-                   (if-let [f (get file->handler (str path))]
-                     (try
-                       (f event)
-                       (catch Exception e
-                         (prn e)))))
-                 (str dir))))))))
+                (do
+                  (print dir "")
+                  (time
+                   (watch
+                    (fn [{:keys [type path] :as event}]
+                      (if-let [f (get file->handler (str path))]
+                        (try
+                          (f event)
+                          (catch Exception e
+                            (prn e)))))
+                    (str dir))))))))))
 
 (comment
   (watch!
