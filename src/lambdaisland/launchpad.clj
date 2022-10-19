@@ -41,10 +41,10 @@
 
 (def verbose? (some #{"-v" "--verbose"} *command-line-args*))
 
-(defn debug [& args] (when verbose? (apply println "[DEBUG]" args)))
-(defn info [& args] (apply println "[INFO]" args))
-(defn warn [& args] (apply println "[WARN]" args))
-(defn error [& args] (apply println "[ERROR]" args))
+(defn debug [& args] (when verbose? (apply println (java.util.Date.) "[DEBUG]" args)))
+(defn info [& args] (apply println (java.util.Date.) "[INFO]" args))
+(defn warn [& args] (apply println (java.util.Date.) "[WARN]" args))
+(defn error [& args] (apply println (java.util.Date.) "[ERROR]" args))
 
 (defn shellquote [a]
   (cond
