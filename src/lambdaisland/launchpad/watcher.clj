@@ -34,7 +34,7 @@
   (-> (DirectoryWatcher/builder)
       (.paths (map #(Path/of % (into-array String [])) paths))
       (.listener (#'beholder/fn->listener cb))
-      #_(.fileHashing false)
+      (.fileHashing false)
       (.build)))
 
 (defn watch
