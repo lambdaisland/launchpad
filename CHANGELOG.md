@@ -1,10 +1,8 @@
 # Unreleased
 
-## Added
-
 ## Fixed
 
-## Changed
+- Fixes cljdoc build. There should be no changes to launchpad users.
 
 # 0.9.49-alpha (2022-10-12 / d0123fe)
 
