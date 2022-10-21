@@ -8,7 +8,8 @@
   :inception-year    2022
   :description       "Clojure dev process launcher"
   :group-id          "com.lambdaisland"
-  :version-qualifier "alpha"})
+  :version-qualifier "alpha"
+  :aliases-as-scope-provided [:clojure]})
 
 ;; Local Variables:
 ;; mode:clojure
