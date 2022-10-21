@@ -1,4 +1,5 @@
-(ns lambdaisland.launchpad.shadow
+(ns ^:no-doc ;TODO re-enable
+  lambdaisland.launchpad.shadow
   (:require [clojure.java.io :as io]
             [shadow.cljs.devtools.api :as api]
             [shadow.cljs.devtools.config :as config]
