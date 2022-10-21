@@ -323,24 +323,27 @@
 (defn maybe-connect-emacs [{:keys [options nrepl-port project-root] :as ctx}]
   (when (:cider-connect options)
     (debug "Connecting CIDER with project-dir" project-root)
-    (eval-emacs
-     `(~'let ((~'repl (~'cider-connect-clj (~'list
-                                            :host "localhost"
-                                            :port ~nrepl-port
-                                            :project-dir ~project-root))))
+    (try
+      (eval-emacs
+        `(~'let ((~'repl (~'cider-connect-clj (~'list
+                                                :host "localhost"
+                                                :port ~nrepl-port
+                                                :project-dir ~project-root))))
 
-       ~@(for [build-id (:shadow-cljs/build-ids ctx)
-               :let [init-sym (symbol "launchpad" (name build-id))]]
-           `(~'progn
-             (~'setf (~'alist-get '~init-sym
-                      ~'cider-cljs-repl-types)
-              (~'list ~(pr-str
-                        `(shadow.cljs.devtools.api/nrepl-select ~build-id))))
-             (~'cider-connect-sibling-cljs (~'list
-                                            :cljs-repl-type '~init-sym
-                                            :host "localhost"
-                                            :port ~nrepl-port
-                                            :project-dir ~project-root)))))))
+           ~@(for [build-id (:shadow-cljs/build-ids ctx)
+                   :let [init-sym (symbol "launchpad" (name build-id))]]
+               `(~'progn
+                  (~'setf (~'alist-get '~init-sym
+                                       ~'cider-cljs-repl-types)
+                          (~'list ~(pr-str
+                                     `(shadow.cljs.devtools.api/nrepl-select ~build-id))))
+                  (~'cider-connect-sibling-cljs (~'list
+                                                  :cljs-repl-type '~init-sym
+                                                  :host "localhost"
+                                                  :port ~nrepl-port
+                                                  :project-dir ~project-root))))))
+      (catch java.io.IOException e
+        (warn "Attempt to connect to emacs failed with exception: " (ex-message e)))))
   ctx)
 
 (defn print-summary [ctx]
