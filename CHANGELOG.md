@@ -13,16 +13,12 @@
 
 - Pick up any `:deps` from `deps.local.edn` at startup, not at the first
   classpath reload
-
-# 0.11.59-alpha (2022-10-21 / 8454771)
-
-## Added
-
-## Fixed
-
+  
 ## Changed
 
-# 0.10.54-alpha (2022-10-21 / d9f021c)
+- Disable directory-watcher file hashing, it gets prohibitively slow
+
+# 0.11.59-alpha (2022-10-21 / 8454771)
 
 ## Fixed
 
