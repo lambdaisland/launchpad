@@ -1,0 +1,1 @@
+{:project-specs [:classpath-cmd ["cat" ".cpcache/launchpad.edn"]]}

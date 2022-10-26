@@ -12,3 +12,5 @@ resources/public/ui
 .store
 out
 .#*
+.clj-kondo
+.lsp/.cache

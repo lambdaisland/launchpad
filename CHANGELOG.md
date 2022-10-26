@@ -2,9 +2,17 @@
 
 ## Added
 
+- Write the current classpath to `.cpcache/launchpad.cp`, for integrating third
+  parties like clojure-lsp. (configure `cat .cpache/launchpad.cp` as your
+  `:classpath-cmd`)
+- Call `(user/go)` in a `try/catch`
+- Start the watcher on a separate thread, it can take a long time to boot, and
+  meanwhile we shouldn't block REPL startup.
+
 ## Fixed
 
-## Changed
+- Pick up any `:deps` from `deps.local.edn` at startup, not at the first
+  classpath reload
 
 # 0.11.59-alpha (2022-10-21 / 8454771)
 

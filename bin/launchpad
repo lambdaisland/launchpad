@@ -1,0 +1,5 @@
+#!/usr/bin/env bb
+(ns transit.dev-repl.main
+  (:require [lambdaisland.launchpad :as launchpad]))
+
+(launchpad/main {})

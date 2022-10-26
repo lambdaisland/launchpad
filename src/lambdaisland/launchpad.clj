@@ -158,6 +158,9 @@
                                          :else
                                          b))
                                      deps-edn deps-local))
+        ;; Pull these out and inject them into -Sdeps, otherwise they are only
+        ;; picked up with the next reload
+        (update :extra-deps merge (:deps deps-local))
         ;; It seems like if we set `{:aliases {}}` via `-Sdeps` it overrides
         ;; deps.edn aliases, rather than merging them, so we merge them
         ;; ourselves and pass them all to -Sdeps. Needs more testing to see if
@@ -217,7 +220,8 @@
     (-> ctx
         (update :requires conj 'lambdaisland.launchpad.watcher)
         (update :eval-forms (fnil conj [])
-                `(lambdaisland.launchpad.watcher/watch! ~watch-handlers)))))
+                `(future
+                   (lambdaisland.launchpad.watcher/watch! ~watch-handlers))))))
 
 (defn clojure-cli-args [{:keys [aliases requires nrepl-port java-args middleware extra-deps alias-defs eval-forms] :as ctx}]
   (cond-> ["clojure"]
@@ -238,7 +242,10 @@
   (cond-> ctx
     (:go options)
     (update :eval-forms (fnil conj [])
-            '(user/go))))
+            '(try
+               (user/go)
+               (catch Exception e
+                 (println "(user/go) failed" e))))))
 
 (defn run-nrepl-server [{:keys [nrepl-port middleware] :as ctx}]
   (-> ctx
@@ -258,6 +265,8 @@
   (as-> ctx <>
     (update <> :extra-deps assoc 'com.lambdaisland/classpath classpath-coords)
     (update <> :requires conj 'lambdaisland.launchpad.deps)
+    (update <> :eval-forms (fnil conj [])
+            `(lambdaisland.launchpad.deps/write-cpcache-file))
     (register-watch-handlers
      <>
      `(lambdaisland.launchpad.deps/watch-handlers
