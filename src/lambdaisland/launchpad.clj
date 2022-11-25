@@ -141,14 +141,24 @@
 (defn find-free-nrepl-port [ctx]
   (assoc ctx :nrepl-port (free-port)))
 
+(defn maybe-read-edn [f]
+  (when (.exists f) (edn/read-string (slurp f))))
+
 (defn read-deps-edn [ctx]
   (let [deps-edn (edn/read-string (slurp "deps.edn") )
-        deps-local (when (.exists (io/file "deps.local.edn"))
-                     (edn/read-string (slurp "deps.local.edn") ))]
+        deps-system (maybe-read-edn
+                     (io/file (System/getProperty "user.home") ".clojure" "deps.edn"))
+
+        deps-local (maybe-read-edn
+                    (io/file "deps.local.edn"))]
 
     (-> ctx
-        (update :aliases (fnil into []) (:launchpad/aliases deps-local))
-        (update :main-opts (fnil into []) (:launchpad/main-opts deps-local))
+        (update :aliases (fnil into []) (concat
+                                         (:launchpad/aliases deps-system)
+                                         (:launchpad/aliases deps-local)))
+        (update :main-opts (fnil into []) (concat
+                                           (:launchpad/main-opts deps-system)
+                                           (:launchpad/main-opts deps-local)))
         (assoc :deps-edn (merge-with (fn [a b]
                                        (cond
                                          (and (map? a) (map? b))
@@ -402,19 +412,22 @@
       dir
       (recur (.getParent (io/file dir))))))
 
-(defn main
-  ([{:keys [steps executable project-root]
-     :or {steps default-steps
-          project-root (find-project-root)}}]
+(defn initial-context [{:keys [steps executable project-root]
+                        :or {steps default-steps
+                             project-root (find-project-root)}}]
+  {:main-opts *command-line-args*
+   :executable (or executable
+                   (str/replace *file*
+                                (str project-root "/")
+                                ""))
+   :project-root project-root})
 
-   (let [ctx (reduce #(%2 %1)
-                     {:main-opts *command-line-args*
-                      :executable (or executable
-                                      (str/replace *file*
-                                                   (str project-root "/")
-                                                   ""))
-                      :project-root project-root}
-                     steps)
+(defn process-steps [ctx steps]
+  (reduce #(%2 %1) ctx steps))
+
+(defn main
+  ([{:keys [steps] :or {steps default-steps} :as opts}]
+   (let [ctx (process-steps (initial-context opts) steps)
          process (:clojure-process ctx)]
      (.addShutdownHook (Runtime/getRuntime)
                        (Thread. (fn [] (.destroy (:proc process)))))
