@@ -43,7 +43,7 @@
 
   Returns a directory watcher that can be passed to `stop` to stop the watch."
   [cb & paths]
-  (doto (build-watcher cb paths)
+  #_(doto (build-watcher cb paths)
     (.watchAsync)))
 
 (defn watch!
