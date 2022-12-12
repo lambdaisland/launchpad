@@ -5,10 +5,10 @@
   com.lambdaisland/dotenv {:mvn/version "0.2.5"}}
 
  :aliases
- {:clojure { :extra-deps {babashka/babashka {:mvn/version "1.0.167" :scope "provided"}
+ {:clojure { :extra-deps {babashka/babashka {:mvn/version "1.0.168" :scope "provided"}
                           org.clojure/tools.deps.alpha {:mvn/version "0.15.1254"}
                           com.nextjournal/beholder {:mvn/version "1.0.0"}
-                          thheller/shadow-cljs {:mvn/version "2.20.13"}
+                          thheller/shadow-cljs {:mvn/version "2.20.14"}
                           com.lambdaisland/classpath {:mvn/version "0.4.44"}}}
   :dev
   {:extra-paths ["dev"]
