@@ -13,13 +13,15 @@
   (.toAbsolutePath (Path/of "" (into-array String []))))
 
 (defn find-shadow-roots
-  "Find all libraries included via :local/root that haev a shadow-cljs.edn at
+  "Find all libraries included via :local/root that have a shadow-cljs.edn at
   their root."
   []
-  (keep (fn [{:local/keys [root]}]
-          (when (and root (.exists (io/file root "shadow-cljs.edn")))
-            root))
-        (vals (:libs (licp/read-basis)))))
+  (cond-> (keep (fn [{:local/keys [root]}]
+                  (when (and root (.exists (io/file root "shadow-cljs.edn")))
+                    root))
+                (vals (:libs (licp/read-basis))))
+    (.exists (io/file "shadow-cljs.edn"))
+    (conj "")))
 
 (defn read-shadow-config
   "Slurp in a shadow-cljs.edn, applying normalization and defaults."
@@ -80,7 +82,9 @@
                                [build-id
                                 (assoc (update-build-keys process-root module-root v)
                                        :build-id build-id
-                                       :js-options {:js-package-dirs [(str module-path "/node_modules")]})])))
+                                       :js-options (if (= "" module-path)
+                                                     {}
+                                                     {:js-package-dirs [(str module-path "/node_modules")]}))])))
 
                       builds))))))
       (assoc :deps {})

@@ -171,6 +171,7 @@
         ;; Pull these out and inject them into -Sdeps, otherwise they are only
         ;; picked up with the next reload
         (update :extra-deps merge (:deps deps-local))
+        (assoc :paths (concat (:paths deps-edn) (:paths deps-local)))
         ;; It seems like if we set `{:aliases {}}` via `-Sdeps` it overrides
         ;; deps.edn aliases, rather than merging them, so we merge them
         ;; ourselves and pass them all to -Sdeps. Needs more testing to see if
@@ -233,13 +234,14 @@
                 `(future
                    (lambdaisland.launchpad.watcher/watch! ~watch-handlers))))))
 
-(defn clojure-cli-args [{:keys [aliases requires nrepl-port java-args middleware extra-deps alias-defs eval-forms] :as ctx}]
+(defn clojure-cli-args [{:keys [aliases requires nrepl-port java-args middleware extra-deps paths alias-defs eval-forms] :as ctx}]
   (cond-> ["clojure"]
     :-> (into (map #(str "-J" %)) java-args)
     (seq aliases)
     (conj (str/join (cons "-A" aliases)))
-    extra-deps
+    (or extra-deps paths alias-defs)
     (into ["-Sdeps" (pr-str {:deps extra-deps
+                             :paths paths
                              :aliases alias-defs})])
     :->
     (into ["-M" "-e" (pr-str `(do ~(when (seq requires)
