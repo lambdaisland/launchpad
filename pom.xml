@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.lambdaisland</groupId>
   <artifactId>launchpad</artifactId>
-  <version>0.13.67-alpha</version>
+  <version>0.14.72-alpha</version>
   <name>launchpad</name>
   <description>Clojure dev process launcher</description>
   <url>https://github.com/lambdaisland/launchpad</url>
@@ -25,7 +25,7 @@
     <url>https://github.com/lambdaisland/launchpad</url>
     <connection>scm:git:git://github.com/lambdaisland/launchpad.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/lambdaisland/launchpad.git</developerConnection>
-    <tag>9264e53dbd8fcaa0cd704dee3985d38440ef376b</tag>
+    <tag>8cbf56aa608c0379c363d45892e2cd11f930796e</tag>
   </scm>
   <dependencies>
     <dependency>
@@ -41,13 +41,13 @@
     <dependency>
       <groupId>babashka</groupId>
       <artifactId>babashka</artifactId>
-      <version>1.0.164</version>
+      <version>1.0.168</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.clojure</groupId>
       <artifactId>tools.deps.alpha</artifactId>
-      <version>0.14.1222</version>
+      <version>0.15.1254</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -59,7 +59,7 @@
     <dependency>
       <groupId>thheller</groupId>
       <artifactId>shadow-cljs</artifactId>
-      <version>2.20.5</version>
+      <version>2.20.14</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -96,7 +96,7 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <git-revision>9264e53dbd8fcaa0cd704dee3985d38440ef376b</git-revision>
+              <git-revision>8cbf56aa608c0379c363d45892e2cd11f930796e</git-revision>
             </manifestEntries>
           </archive>
         </configuration>
