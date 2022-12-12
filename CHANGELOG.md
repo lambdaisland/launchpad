@@ -2,17 +2,18 @@
 
 ## Added
 
+- Add support for top-level shadow-cljs config/builds, not only sub-project builds
+
 ## Fixed
 
-## Changed
+- Better handle `:paths` in `deps.local.edn`, ensure they are picked up at boot,
+  not only at first classpath reload
 
 # 0.13.67-alpha (2022-11-25 / 07ac499)
 
 ## Added
 
-## Fixed
-
-## Changed
+- Support setting :lauchpad/main-opts in .clojure/deps.edn
 
 # 0.12.64-alpha (2022-10-26 / a4fdb16)
 
