@@ -2,9 +2,12 @@
 
 ## Added
 
-## Fixed
+- Allow setting nrepl port/bind from CLI
+- Provide a warning when connecting to emacs fails, rather than exiting
 
 ## Changed
+
+- Dependency version bumps
 
 # 0.14.72-alpha (2022-12-12 / 06eed64)
 

@@ -1,5 +1,5 @@
 {:deps
  {lambdaisland/open-source {:git/url "https://github.com/lambdaisland/open-source"
-                            :git/sha "730f28fd2a7d8afade6d918658dc770dd7720cc7"
+                            :git/sha "97b02a072a9e8e06b5c8b0260a1f1fb6fc8668be"
                             #_#_:local/root "../open-source"}
   com.lambdaisland/launchpad {:local/root "."}}}
