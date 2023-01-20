@@ -16,6 +16,11 @@
 (def cli-opts
   [["-h" "--help"]
    ["-v" "--verbose" "Print debug information"]
+   ["-p" "--nrepl-port PORT" "Start nrepl on port. Defaults to 0 (= random)"
+    :default 0
+    :parse-fn #(Integer/parseInt %)]
+   ["-b" "--nrepl-bind ADDR" "Bind address of nrepl, by default \"127.0.0.1\"."
+    :default "127.0.0.1"]
    [nil "--cider-nrepl" "Include the CIDER nREPL middleware"]
    [nil "--refactor-nrepl" "Include the refactor-nrepl middleware"]
    [nil "--cider-connect" "Automatically connect CIDER"]
@@ -136,16 +141,20 @@
       (:cider-nrepl options)
       (assoc-dep 'cider/cider-nrepl {:mvn/version (or (emacs-cider-version) default-cider-version)})
       (:refactor-nrepl options)
-      (assoc-dep 'refactor-nrepl/refactor-nrepl {:mvn/version (or (emacs-refactor-nrepl-version) default-refactor-nrepl-version)} ))))
+      (assoc-dep 'refactor-nrepl/refactor-nrepl {:mvn/version (or (emacs-refactor-nrepl-version) default-refactor-nrepl-version)}))))
 
-(defn find-free-nrepl-port [ctx]
-  (assoc ctx :nrepl-port (free-port)))
+(defn get-nrepl-port [ctx]
+  (assoc ctx :nrepl-port (or (get-in ctx [:options :nrepl-port])
+                          (free-port))))
+
+(defn get-nrepl-bind [ctx]
+  (assoc ctx :nrepl-bind (get-in ctx [:options :nrepl-bind])))
 
 (defn maybe-read-edn [f]
   (when (.exists f) (edn/read-string (slurp f))))
 
 (defn read-deps-edn [ctx]
-  (let [deps-edn (edn/read-string (slurp "deps.edn") )
+  (let [deps-edn (edn/read-string (slurp "deps.edn"))
         deps-system (maybe-read-edn
                      (io/file (System/getProperty "user.home") ".clojure" "deps.edn"))
 
@@ -259,11 +268,13 @@
                (catch Exception e
                  (println "(user/go) failed" e))))))
 
-(defn run-nrepl-server [{:keys [nrepl-port middleware] :as ctx}]
+(defn run-nrepl-server [{:keys [nrepl-port nrepl-bind middleware] :as ctx}]
   (-> ctx
       (update :requires conj 'nrepl.cmdline)
       (update :eval-forms (fnil conj [])
-              `(nrepl.cmdline/-main "--port" ~(str nrepl-port) "--middleware" ~(pr-str middleware)))))
+              `(nrepl.cmdline/-main "--port" ~(str nrepl-port)
+                                    "--bind" ~(str nrepl-bind)
+                                    "--middleware" ~(pr-str middleware)))))
 
 (defn register-watch-handlers [ctx handlers]
   (update ctx
@@ -380,9 +391,11 @@
                            (:extra-deps ctx)))
   ctx)
 
-(def before-steps [find-free-nrepl-port
+(def before-steps [
                    read-deps-edn
                    handle-cli-args
+                   get-nrepl-port
+                   get-nrepl-bind
                    compute-middleware
                    ;; inject dependencies and enable behavior
                    compute-extra-deps
