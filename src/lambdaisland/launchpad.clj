@@ -17,7 +17,6 @@
   [["-h" "--help"]
    ["-v" "--verbose" "Print debug information"]
    ["-p" "--nrepl-port PORT" "Start nrepl on port. Defaults to 0 (= random)"
-    :default 0
     :parse-fn #(Integer/parseInt %)]
    ["-b" "--nrepl-bind ADDR" "Bind address of nrepl, by default \"127.0.0.1\"."
     :default "127.0.0.1"]
@@ -353,27 +352,28 @@
       (assoc ctx :clojure-process process))))
 
 (defn maybe-connect-emacs [{:keys [options nrepl-port project-root] :as ctx}]
+  (println "### maybe connect emacs")
   (when (:cider-connect options)
     (debug "Connecting CIDER with project-dir" project-root)
     (try
       (eval-emacs
-        `(~'let ((~'repl (~'cider-connect-clj (~'list
-                                                :host "localhost"
-                                                :port ~nrepl-port
-                                                :project-dir ~project-root))))
+       `(~'let ((~'repl (~'cider-connect-clj (~'list
+                                              :host "localhost"
+                                              :port ~nrepl-port
+                                              :project-dir ~project-root))))
 
-           ~@(for [build-id (:shadow-cljs/build-ids ctx)
-                   :let [init-sym (symbol "launchpad" (name build-id))]]
-               `(~'progn
-                  (~'setf (~'alist-get '~init-sym
-                                       ~'cider-cljs-repl-types)
-                          (~'list ~(pr-str
-                                     `(shadow.cljs.devtools.api/nrepl-select ~build-id))))
-                  (~'cider-connect-sibling-cljs (~'list
-                                                  :cljs-repl-type '~init-sym
-                                                  :host "localhost"
-                                                  :port ~nrepl-port
-                                                  :project-dir ~project-root))))))
+         ~@(for [build-id (:shadow-cljs/build-ids ctx)
+                 :let [init-sym (symbol "launchpad" (name build-id))]]
+             `(~'progn
+               (~'setf (~'alist-get '~init-sym
+                        ~'cider-cljs-repl-types)
+                (~'list ~(pr-str
+                          `(shadow.cljs.devtools.api/nrepl-select ~build-id))))
+               (~'cider-connect-sibling-cljs (~'list
+                                              :cljs-repl-type '~init-sym
+                                              :host "localhost"
+                                              :port ~nrepl-port
+                                              :project-dir ~project-root))))))
       (catch java.io.IOException e
         (warn "Attempt to connect to emacs failed with exception: " (ex-message e)))))
   ctx)
