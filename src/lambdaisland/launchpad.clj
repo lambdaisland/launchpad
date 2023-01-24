@@ -352,7 +352,6 @@
       (assoc ctx :clojure-process process))))
 
 (defn maybe-connect-emacs [{:keys [options nrepl-port project-root] :as ctx}]
-  (println "### maybe connect emacs")
   (when (:cider-connect options)
     (debug "Connecting CIDER with project-dir" project-root)
     (try
