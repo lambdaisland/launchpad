@@ -5,7 +5,7 @@
   com.lambdaisland/dotenv {:mvn/version "0.2.5"}}
 
  :aliases
- {:clojure { :extra-deps {babashka/babashka {:mvn/version "1.0.170" :scope "provided"}
+ {:clojure { :extra-deps {babashka/babashka {:mvn/version "1.1.172" :scope "provided"}
                           org.clojure/tools.deps.alpha {:mvn/version "0.15.1254"}
                           com.nextjournal/beholder {:mvn/version "1.0.1"}
                           thheller/shadow-cljs {:mvn/version "2.20.20"}
@@ -16,4 +16,4 @@
 
   :test
   {:extra-paths ["test"]
-   :extra-deps  {lambdaisland/kaocha {:mvn/version "1.73.1175"}}}}}
+   :extra-deps  {lambdaisland/kaocha {:mvn/version "1.76.1230"}}}}}
