@@ -63,17 +63,14 @@
                (run! beholder/stop w))
              (doall
               (for [dir directories]
-                (do
-                  (print dir "")
-                  (time
-                   (watch
-                    (fn [{:keys [type path] :as event}]
-                      (if-let [f (get file->handler (str path))]
-                        (try
-                          (f event)
-                          (catch Exception e
-                            (prn e)))))
-                    (str dir))))))))))
+                (watch
+                 (fn [{:keys [type path] :as event}]
+                   (if-let [f (get file->handler (str path))]
+                     (try
+                       (f event)
+                       (catch Exception e
+                         (prn e)))))
+                 (str dir))))))))
 
 (comment
   (watch!

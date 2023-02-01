@@ -30,7 +30,7 @@
   (spit ".cpcache/launchpad.cp"
         (str/join
          ":"
-         (time (mapcat second (licp/classpath-chain))))))
+         (mapcat second (licp/classpath-chain)))))
 
 (defn watch-handlers [opts]
   (let [basis (basis opts)
