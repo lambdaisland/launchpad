@@ -125,6 +125,8 @@ configure launchpad.
  :launchpad/shadow-build-ids [] ; which shadow builds to start, although it may
                                 ; be preferable to configure this as part of
                                 ; specific aliases in your main deps.edn
+ ;; which shadow builds to automatically connect to if `--emacs` flag is provided
+ :launchpad/shadow-connect-ids [] 
  }
 ```
 
