@@ -320,7 +320,14 @@
   (let [build-ids (->> aliases
                        (mapcat #(get-in deps-edn [:aliases % :launchpad/shadow-build-ids]))
                        (concat (:launchpad/shadow-build-ids deps-edn))
-                       distinct)]
+                       distinct)
+        connect-ids (->> aliases
+                         (mapcat #(get-in deps-edn [:aliases % :launchpad/shadow-connect-ids]))
+                         (concat (:launchpad/shadow-connect-ids deps-edn))
+                         distinct)
+        connect-ids (if (empty? connect-ids)
+                      build-ids
+                      connect-ids)]
     ;; FIXME filter this down to builds that exist in the combined shadow config
     (when (seq build-ids)
       (debug "Starting shadow-cljs builds" build-ids))
@@ -328,6 +335,7 @@
       (-> ctx
           (update :middleware (fnil conj []) 'shadow.cljs.devtools.server.nrepl/middleware)
           (assoc :shadow-cljs/build-ids build-ids)
+          (assoc :shadow-cljs/connect-ids connect-ids)
           (update :eval-forms (fnil conj [])
                   '(require 'lambdaisland.launchpad.shadow)
                   `(apply
@@ -361,13 +369,13 @@
                                               :port ~nrepl-port
                                               :project-dir ~project-root))))
 
-         ~@(for [build-id (:shadow-cljs/build-ids ctx)
-                 :let [init-sym (symbol "launchpad" (name build-id))]]
+         ~@(for [connect-id (:shadow-cljs/connect-ids ctx)
+                 :let [init-sym (symbol "launchpad" (name connect-id))]]
              `(~'progn
                (~'setf (~'alist-get '~init-sym
                         ~'cider-cljs-repl-types)
                 (~'list ~(pr-str
-                          `(shadow.cljs.devtools.api/nrepl-select ~build-id))))
+                          `(shadow.cljs.devtools.api/nrepl-select ~connect-id))))
                (~'cider-connect-sibling-cljs (~'list
                                               :cljs-repl-type '~init-sym
                                               :host "localhost"
