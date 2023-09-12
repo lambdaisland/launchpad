@@ -10,7 +10,8 @@
 
 ## Added
 
-- shadow-build-ids options
+- Added a `:launchpad/shadow-connect-ids` option, for cases where you don't want
+  to auto-connect to every build in `:launchpad/shadow-build-ids`
 
 # 0.16.88-alpha (2023-03-08 / 67de06e)
 
