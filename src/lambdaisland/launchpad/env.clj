@@ -53,7 +53,7 @@
   (assert (and (= -1 (.indexOf str "="))
                (= -1 (.indexOf str "\u0000"))))
   (let [^java.lang.reflect.Constructor init
-        (first (.getDeclaredConstructors java.lang.ProcessEnvironment$Value))]
+        (first (.getDeclaredConstructors java.lang.ProcessEnvironment$Variable))]
     (.setAccessible init true)
     (.newInstance init (into-array Object ["XXX" (.getBytes "XXX")]))))
 
@@ -62,7 +62,7 @@
    (run! (fn [[k v]] (setenv k v)) env))
   ([^String var ^String val]
    ;; This one is used by ProcessBuilder
-   (.put theEnvironment (new-value var) (new-variable val))
+   (.put theEnvironment (new-variable var) (new-value val))
    ;; This one is used by System/getenv
    (.put theUnmodifiableEnvironment var val)
    ;; Also change the actual OS environment for the process

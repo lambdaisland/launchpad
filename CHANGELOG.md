@@ -1,10 +1,8 @@
 # Unreleased
 
-## Added
-
 ## Fixed
 
-## Changed
+- Fix an issue with `.env` reloading messing up Java's env var representation
 
 # 0.17.93-alpha (2023-09-06 / 84369b0)
 
