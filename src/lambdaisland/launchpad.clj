@@ -34,8 +34,8 @@
 (def default-cider-version "RELEASE")
 (def default-refactor-nrepl-version "RELEASE")
 
-(def classpath-coords {:mvn/version "0.4.44"})
-(def jnr-posix-coords {:mvn/version "3.1.15"})
+(def classpath-coords {:mvn/version "0.5.48"})
+(def jnr-posix-coords {:mvn/version "3.1.18"})
 
 (def default-launchpad-coords
   "Version coordinates for Launchpad, which we use to inject ourselves into the
