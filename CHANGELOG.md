@@ -1,10 +1,9 @@
 # Unreleased
 
-## Added
-
 ## Fixed
 
-## Changed
+- Add an explicit dependency on guava, to make sure we don't get old versions
+  that clash with shadow-cljs
 
 # 0.20.103-alpha (2024-01-10 / 1a5e504)
 

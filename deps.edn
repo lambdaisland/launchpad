@@ -9,6 +9,8 @@
                           org.clojure/tools.deps.alpha {:mvn/version "0.15.1254"}
                           com.nextjournal/beholder {:mvn/version "1.0.2"}
                           thheller/shadow-cljs {:mvn/version "2.26.3"}
+                          ;; prevent tools.deps.alpha from dragging in an old guava
+                          com.google.guava/guava {:mvn/version "33.0.0-jre"}
                           com.lambdaisland/classpath {:mvn/version "0.5.48"}}}
   :dev
   {:extra-paths ["dev"]
