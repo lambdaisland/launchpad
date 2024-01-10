@@ -1,10 +1,8 @@
 # Unreleased
 
-## Added
-
-## Fixed
-
 ## Changed
+
+- Upgrade dependencies
 
 # 0.18.97-alpha (2023-11-14 / 4275a6c)
 
