@@ -181,6 +181,73 @@ At this point in Emacs you'll see this pop up:
 
 For other editors connect to the given port manually.
 
+## Writing custom steps
+
+Launchpad performs a number of steps, currently these are
+
+- `read-deps-edn` :  Read in `deps.edn`, `~/.clojure/deps.edn`, and `deps.local.edn`
+- `handle-cli-args` : Parse CLI arguments
+- `get-nrepl-port` : Figure out the nREPL port, either from a CLI argument or use a free port
+- `get-nrepl-bind` : Figure out which device to bind to
+- `compute-middleware` : Figure out the nREPL middleware to use (optionally CIDER, refactor-nrepl, and whatever else is configured)
+- `compute-extra-deps` : Add additional dependencies if needed, like nREPL, CIDER, refactor-nrepl
+- `include-hot-reload-deps` : Add `lambdaisland.classpath` and set it up for hot reloading deps.edn
+- `include-launchpad-deps` : Add launchpad itself as a dependency, since it contains runtime helpers for dotenv and shadow-cljs handling
+- `watch-dotenv` : Setup watch handlers to hot-reload `.env` and `.env.local`
+- `start-shadow-build` : Start the shadow-cljs build process, if necessary
+- `maybe-go` : Add `(user/go)` to the list of code to run on startup
+- `disable-stack-trace-elision` : Add `-XX:-OmitStackTraceInFastThrow` to the JVM flags
+- `inject-aliases-as-property` : Add `-Dlambdaisland.launchpad.aliases` as a JVM flag, so we know at runtime which aliases we started with
+- `include-watcher` : Start up the main watcher which will handle deps.edn/.env watching
+- `run-nrepl-server` : Add startup code to start nREPL
+- `print-summary` : Print an overview of aliases and extra dependencies that are being included
+- `start-process` : This is where we actually start Clojure
+- `wait-for-nrepl` : Wait for nREPL to be available
+- `maybe-connect-emacs` : Instruct Emacs to connect to nREPL
+
+Each steps works on a context (`ctx`) map, mostly what you do is add stuff into
+that context, which gets used to construct the final clojure/JVM startup
+command. These are some of the keys in the context that you can read, set, or
+update:
+
+- `:java-args` : sequence of JVM arguments, without the leading `-J`
+- `:requires` : namespaces to load (sequence of symbols)
+- `:eval-forms` : code to evaluate (sequence of forms)
+- `:options` : the result of parsing command line flags (map)
+- `:watch-handlers` : map from file path to filesystem change handler function
+- `:extra-deps` : additional dependencies to load, map from artifact name (symbol), to deps.edn coordinates map
+- `:env` : environment variables to set (gets populated with `.env`/`.env.local`)
+- `:middleware` : nREPL middleware to include, sequence of fully qualified symbols
+- `:shadow-cljs/build-ids` : shadow-cljs build-ids to start
+- `:shadow-cljs/connect-ids` : shadow-cljs build-ids to connect a REPL to
+- `:clojure-process` : the Java Process object, once Clojure has started
+- `:nrepl-port` : nREPL TCP port
+- `:nrepl-bind` : nREPL device IP
+- `:aliases` : deps.edn aliases in use
+- `:main-opts` : CLI command line options (seq of string)
+- `:deps-edn` : merged deps.edn map
+- `:paths` : paths to add to the classpath
+
+Most of the time you want to add extra steps either right before, or right after
+`start-process`. The vars `before-steps` and `after-steps` are useful for that.
+
+```clj
+(require '[lambdaisland.launchpad :as launchpad]
+         '[babashka.process :refer [process]])
+
+(defn npm-install [ctx]
+  (process '[npm install] {:out :inherit
+                           :err :inherit})
+  ctx)
+
+(launchpad/main
+ {:steps
+  (concat launchpad/before-steps
+          [npm-install
+           launchpad/start-process]
+          launchpad/after-steps)})
+```
+
 <!-- opencollective -->
 ## Lambda Island Open Source
 

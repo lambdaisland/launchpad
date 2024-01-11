@@ -398,8 +398,7 @@
                            (:extra-deps ctx)))
   ctx)
 
-(def before-steps [
-                   read-deps-edn
+(def before-steps [read-deps-edn
                    handle-cli-args
                    get-nrepl-port
                    get-nrepl-bind
@@ -414,7 +413,6 @@
                    ;; extra java flags
                    disable-stack-trace-elision
                    inject-aliases-as-property
-                   ;; start the actual process
                    include-watcher
                    run-nrepl-server
                    print-summary])
