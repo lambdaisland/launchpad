@@ -2,9 +2,8 @@
 
 ## Added
 
-## Fixed
-
-## Changed
+- Allow setting :java-args, :middleware, :eval-forms directly from the top-level opts
+- Add facilities for running nested processes, `lauchpad/run-process`
 
 # 0.21.106-alpha (2024-01-10 / 8fc8faf)
 

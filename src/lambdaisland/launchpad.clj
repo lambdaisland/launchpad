@@ -1,17 +1,19 @@
 (ns lambdaisland.launchpad
-  (:require [babashka.curl :as curl]
-            [babashka.process :refer [process]]
-            [babashka.wait :as wait]
-            [cheshire.core :as json]
-            [clojure.core.async :as async]
-            [clojure.edn :as edn]
-            [clojure.java.io :as io]
-            [clojure.java.shell :as shell]
-            [clojure.pprint :as pprint]
-            [clojure.string :as str]
-            [clojure.tools.cli :as tools-cli]
-            [lambdaisland.dotenv :as dotenv])
-  (:import java.net.ServerSocket))
+  (:require
+   [babashka.process :refer [process]]
+   [babashka.wait :as wait]
+   [clojure.edn :as edn]
+   [clojure.java.io :as io]
+   [clojure.java.shell :as shell]
+   [clojure.pprint :as pprint]
+   [clojure.string :as str]
+   [clojure.tools.cli :as tools-cli]
+   [lambdaisland.dotenv :as dotenv])
+  (:import
+   (java.io InputStream OutputStream)
+   (java.lang Process ProcessBuilder)
+   (java.net ServerSocket)
+   (java.util.concurrent TimeUnit)))
 
 (def cli-opts
   [["-h" "--help"]
@@ -122,15 +124,18 @@
     (read-string
      (eval-emacs 'cljr-injected-middleware-version))))
 
+(defn add-nrepl-middleware [& mws]
+  (fn [ctx]
+    (update ctx :middleware (fnil into []) mws)))
+
 (defn compute-middleware
   "Figure out the nREPL middleware based on CLI flags"
   [{:keys [options] :as ctx}]
-  (let [add-mw #(update %1 :middleware (fnil conj []) %2)]
-    (cond-> ctx
-      (:cider-nrepl options)
-      (add-mw 'cider.nrepl/cider-middleware)
-      (:refactor-nrepl options)
-      (add-mw 'refactor-nrepl.middleware/wrap-refactor))))
+  (cond-> ctx
+    (:cider-nrepl options)
+    ((add-nrepl-middleware 'cider.nrepl/cider-middleware))
+    (:refactor-nrepl options)
+    ((add-nrepl-middleware 'refactor-nrepl.middleware/wrap-refactor))))
 
 (defn compute-extra-deps [{:keys [options] :as ctx}]
   (let [assoc-dep #(update %1 :extra-deps assoc %2 %3)]
@@ -353,12 +358,6 @@
 (defn include-launchpad-deps [{:keys [extra-deps] :as ctx}]
   (update ctx :extra-deps assoc 'com.lambdaisland/launchpad (find-launchpad-coords)))
 
-(defn start-process [{:keys [options aliases nrepl-port env] :as ctx}]
-  (let [args (clojure-cli-args ctx)]
-    (apply debug (map shellquote args))
-    (let [process (process args {:env env :out :inherit :err :inherit})]
-      (assoc ctx :clojure-process process))))
-
 (defn maybe-connect-emacs [{:keys [options nrepl-port project-root] :as ctx}]
   (when (:cider-connect options)
     (debug "Connecting CIDER with project-dir" project-root)
@@ -398,6 +397,62 @@
                            (:extra-deps ctx)))
   ctx)
 
+(defn pipe-process-output
+  "Prefix output from a process with, prefixing it"
+  [^java.lang.Process proc prefix]
+  (let [out (.getInputStream proc)
+        err (.getErrorStream proc)
+        newline? (volatile! true)
+        ^bytes buffer (make-array Byte/TYPE 1024)]
+    (doseq [[^InputStream from ^OutputStream to] [[out System/out] [err System/err]]]
+      (future
+        (loop []
+          (let [size (.read from buffer)]
+            (when (pos? size)
+              (dotimes [i size]
+                (when @newline?
+                  (.write to (.getBytes prefix))
+                  (vreset! newline? false))
+                (let [b (aget buffer i)]
+                  (.write to (int b))
+                  (when (= (int \newline) b)
+                    (vreset! newline? true))))))
+          (Thread/sleep 100)
+          (recur))))
+    proc))
+
+(defn run-process [{:keys [cmd prefix working-dir
+                           background? timeout-ms check-exit-code? env
+                           color]
+                    :or {working-dir "."
+                         check-exit-code? true}}]
+  (fn [ctx]
+    (let [working-dir  (io/file working-dir)
+          proc-builder (doto (ProcessBuilder. (map str cmd))
+                         (.directory working-dir))
+          _ (.putAll (.environment proc-builder) (or env (:env ctx)))
+          color (mod (hash (or prefix (first cmd))) 8)
+          prefix (str "\u001b[" (+ 30 color) "m[" (or prefix (first cmd)) "]\u001b[0m ")
+          process (pipe-process-output (.start proc-builder) prefix)
+          ctx (update ctx :processes (fnil conj []) process)]
+      (if background?
+        ctx
+        (let [exit (if timeout-ms
+                     (.waitFor process timeout-ms TimeUnit/MILLISECONDS)
+                     (.waitFor process))]
+          (when (and check-exit-code? (not= 0 exit))
+            (do
+              (println (str prefix) "Exited with non-zero exit code: " exit)
+              (System/exit exit)))
+          ctx)))))
+
+(defn start-clojure-process [{:keys [options aliases nrepl-port] :as ctx}]
+  (let [args (clojure-cli-args ctx)]
+    (apply debug (map shellquote args))
+    ((run-process {:cmd args
+                   :ctx-process-key :clojure-process
+                   :background? true}) ctx)))
+
 (def before-steps [read-deps-edn
                    handle-cli-args
                    get-nrepl-port
@@ -414,16 +469,18 @@
                    disable-stack-trace-elision
                    inject-aliases-as-property
                    include-watcher
-                   run-nrepl-server
-                   print-summary])
+                   print-summary
+                   run-nrepl-server])
 
 (def after-steps [wait-for-nrepl
                   ;; stuff that happens after the server is up
                   maybe-connect-emacs])
 
 (def default-steps (concat before-steps
-                           [start-process]
+                           [start-clojure-process]
                            after-steps))
+
+(def ^:deprecated start-process start-clojure-process)
 
 (defn find-project-root []
   (loop [dir (.getParent (io/file *file*))]
@@ -432,15 +489,24 @@
       dir
       (recur (.getParent (io/file dir))))))
 
-(defn initial-context [{:keys [steps executable project-root]
+(defn initial-context [{:keys [steps executable project-root
+                               middleware
+                               java-args
+                               eval-forms]
                         :or {steps default-steps
-                             project-root (find-project-root)}}]
+                             project-root (find-project-root)
+                             middleware []
+                             java-args []
+                             eval-forms []}}]
   {:main-opts *command-line-args*
    :executable (or executable
                    (str/replace *file*
                                 (str project-root "/")
                                 ""))
-   :project-root project-root})
+   :project-root project-root
+   :middleware middleware
+   :java-args java-args
+   :eval-forms eval-forms})
 
 (defn process-steps [ctx steps]
   (reduce #(%2 %1) ctx steps))
@@ -448,7 +514,8 @@
 (defn main
   ([{:keys [steps] :or {steps default-steps} :as opts}]
    (let [ctx (process-steps (initial-context opts) steps)
-         process (:clojure-process ctx)]
+         processes (:processes ctx)]
      (.addShutdownHook (Runtime/getRuntime)
-                       (Thread. (fn [] (.destroy (:proc process)))))
-     (System/exit (:exit @process)))))
+                       (Thread. (fn [] (run! #(.destroy %) processes))))
+     (System/exit (apply min (for [p processes]
+                               (.waitFor p)))))))
