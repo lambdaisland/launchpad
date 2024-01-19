@@ -1,4 +1,5 @@
-{:deps
+{:paths ["src" "resources"]
+ :deps
  {lambdaisland/open-source {:git/url "https://github.com/lambdaisland/open-source"
                             :git/sha "7ce125cbd14888590742da7ab3b6be9bba46fc7a"}
   com.lambdaisland/launchpad {:local/root "."}}}

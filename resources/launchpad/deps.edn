@@ -1,0 +1,12 @@
+;; This file is just a lookup file for Launchpad to find the version of various
+;; things to use. We keep it in deps.edn format so antq can automatically
+;; upgrade versions.
+{:deps
+ {com.lambdaisland/launchpad    {:mvn/version "0.22.110-alpha"}
+  com.lambdaisland/classpath    {:mvn/version "0.5.48"}
+  com.github.jnr/jnr-posix      {:mvn/version "3.1.18"}
+  thheller/shadow-cljs          {:mvn/version "2.26.5"}
+  com.google.guava/guava        {:mvn/version "33.0.0-jre"}
+  cider/cider-nrepl             {:mvn/version "0.45.0"}
+  nrepl/nrepl                   {:mvn/version "1.1.0"}
+  refactor-nrepl/refactor-nrepl {:mvn/version "3.9.1"}}}

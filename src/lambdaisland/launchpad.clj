@@ -28,22 +28,14 @@
    [nil "--emacs" "Shorthand for --cider-nrepl --refactor-nrepl --cider-connect"]
    [nil "--go" "Call (user/go) on boot"]])
 
-(def default-nrepl-version "1.0.0")
+(def library-versions
+  (:deps (edn/read-string (slurp (io/resource "launchpad/deps.edn")))))
 
-;; Unless we have a mechanism of automatically updating these I would use
-;; `RELEASE` here, so non-emacs user always default to the latest version. This
-;; is a good candidate for making this configurable, for explicitness.
-(def default-cider-version "RELEASE")
-(def default-refactor-nrepl-version "RELEASE")
-
-(def classpath-coords {:mvn/version "0.5.48"})
-(def jnr-posix-coords {:mvn/version "3.1.18"})
-
-(def default-launchpad-coords
-  "Version coordinates for Launchpad, which we use to inject ourselves into the
-  project dependencies for runtime support. Only used when we are unable to find
-  the current version in `bb.edn`"
-  {:mvn/version "RELEASE"})
+;; (def default-launchpad-coords
+;;   "Version coordinates for Launchpad, which we use to inject ourselves into the
+;;   project dependencies for runtime support. Only used when we are unable to find
+;;   the current version in `bb.edn`"
+;;   {:mvn/version "RELEASE"})
 
 (def verbose? (some #{"-v" "--verbose"} *command-line-args*))
 
@@ -107,22 +99,24 @@
       ;; even though they are not running Emacs.
       )))
 
-(defn emacs-cider-version
+(defn emacs-cider-coords
   "Find the CIDER version that is currently in use by the running Emacs instance."
   []
   (when (emacs-require 'cider)
-    (read-string
-     (eval-emacs '(if (boundp 'cider-required-middleware-version)
-                    cider-required-middleware-version
-                    (upcase cider-version))))))
+    {:mvn/version
+     (read-string
+      (eval-emacs '(if (boundp 'cider-required-middleware-version)
+                     cider-required-middleware-version
+                     (upcase cider-version))))}))
 
-(defn emacs-refactor-nrepl-version
+(defn emacs-refactor-nrepl-coords
   "Find the refactor-nrepl version that is required by the `clj-refactor` version
   installed in Emacs."
   []
   (when (emacs-require 'clj-refactor)
-    (read-string
-     (eval-emacs 'cljr-injected-middleware-version))))
+    {:mvn/version
+     (read-string
+      (eval-emacs 'cljr-injected-middleware-version))}))
 
 (defn add-nrepl-middleware [& mws]
   (fn [ctx]
@@ -137,15 +131,31 @@
     (:refactor-nrepl options)
     ((add-nrepl-middleware 'refactor-nrepl.middleware/wrap-refactor))))
 
+(defn library-in-deps? [ctx libname]
+  (or (contains? (get-in ctx [:deps-edn :deps]) libname)
+      (some
+       (fn [extra-deps]
+         (contains? extra-deps libname))
+       (map (comp :extra-deps val)
+            (select-keys (get-in ctx [:deps-edn :aliases])
+                         (:aliases ctx))))))
+
+(defn assoc-extra-dep [ctx libname & [version]]
+  (if (library-in-deps? ctx libname)
+    ctx
+    (update ctx :extra-deps
+            assoc libname
+            (or version
+                (get library-versions libname)))))
+
 (defn compute-extra-deps [{:keys [options] :as ctx}]
-  (let [assoc-dep #(update %1 :extra-deps assoc %2 %3)]
-    (cond-> ctx
-      true
-      (assoc-dep 'nrepl/nrepl {:mvn/version default-nrepl-version})
-      (:cider-nrepl options)
-      (assoc-dep 'cider/cider-nrepl {:mvn/version (or (emacs-cider-version) default-cider-version)})
-      (:refactor-nrepl options)
-      (assoc-dep 'refactor-nrepl/refactor-nrepl {:mvn/version (or (emacs-refactor-nrepl-version) default-refactor-nrepl-version)}))))
+  (cond-> ctx
+    true
+    (assoc-extra-dep 'nrepl/nrepl)
+    (:cider-nrepl options)
+    (assoc-extra-dep 'cider/cider-nrepl (emacs-cider-coords))
+    (:refactor-nrepl options)
+    (assoc-extra-dep 'refactor-nrepl/refactor-nrepl (emacs-refactor-nrepl-coords))))
 
 (defn get-nrepl-port [ctx]
   (assoc ctx :nrepl-port (or (get-in ctx [:options :nrepl-port])
@@ -290,7 +300,7 @@
 
 (defn include-hot-reload-deps [{:keys [extra-deps aliases] :as ctx}]
   (as-> ctx <>
-    (update <> :extra-deps assoc 'com.lambdaisland/classpath classpath-coords)
+    (assoc-extra-dep <> 'com.lambdaisland/classpath)
     (update <> :requires conj 'lambdaisland.launchpad.deps)
     (update <> :eval-forms (fnil conj [])
             `(lambdaisland.launchpad.deps/write-cpcache-file))
@@ -310,7 +320,7 @@
 
 (defn watch-dotenv [ctx]
   (-> ctx
-      (update :extra-deps assoc 'com.github.jnr/jnr-posix jnr-posix-coords)
+      (assoc-extra-dep 'com.github.jnr/jnr-posix)
       (update :java-args conj
               "--add-opens=java.base/java.lang=ALL-UNNAMED"
               "--add-opens=java.base/java.util=ALL-UNNAMED")
@@ -338,6 +348,9 @@
       (debug "Starting shadow-cljs builds" build-ids))
     (if (seq build-ids)
       (-> ctx
+          (assoc-extra-dep 'thheller/shadow-cljs)
+          ;; tools.deps pulls in an old Guava, which causes issues with shadow-cljs
+          (assoc-extra-dep 'com.google.guava/guava)
           (update :middleware (fnil conj []) 'shadow.cljs.devtools.server.nrepl/middleware)
           (assoc :shadow-cljs/build-ids build-ids)
           (assoc :shadow-cljs/connect-ids connect-ids)
@@ -350,13 +363,11 @@
       ctx)))
 
 (defn find-launchpad-coords []
-  (or
-   (when (.exists (io/file "bb.edn"))
-     (get-in (edn/read-string (slurp "bb.edn")) [:deps 'com.lambdaisland/launchpad]))
-   default-launchpad-coords))
+  (when (.exists (io/file "bb.edn"))
+    (get-in (edn/read-string (slurp "bb.edn")) [:deps 'com.lambdaisland/launchpad])))
 
-(defn include-launchpad-deps [{:keys [extra-deps] :as ctx}]
-  (update ctx :extra-deps assoc 'com.lambdaisland/launchpad (find-launchpad-coords)))
+(defn include-launchpad-deps [ctx]
+  (assoc-extra-dep ctx 'com.lambdaisland/launchpad (find-launchpad-coords)))
 
 (defn maybe-connect-emacs [{:keys [options nrepl-port project-root] :as ctx}]
   (when (:cider-connect options)
@@ -511,11 +522,10 @@
 (defn process-steps [ctx steps]
   (reduce #(%2 %1) ctx steps))
 
-(defn main
-  ([{:keys [steps] :or {steps default-steps} :as opts}]
-   (let [ctx (process-steps (initial-context opts) steps)
-         processes (:processes ctx)]
-     (.addShutdownHook (Runtime/getRuntime)
-                       (Thread. (fn [] (run! #(.destroy %) processes))))
-     (System/exit (apply min (for [p processes]
-                               (.waitFor p)))))))
+(defn main [{:keys [steps] :or {steps default-steps} :as opts}]
+  (let [ctx (process-steps (initial-context opts) steps)
+        processes (:processes ctx)]
+    (.addShutdownHook (Runtime/getRuntime)
+                      (Thread. (fn [] (run! #(.destroy %) processes))))
+    (System/exit (apply min (for [p processes]
+                              (.waitFor p))))))

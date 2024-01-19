@@ -2,9 +2,14 @@
 
 ## Added
 
+- Inject shadow-cljs deps when needed and not already present
+
 ## Fixed
 
 ## Changed
+
+- Check deps before injecting extra deps (cider, nrepl, shadow, etc). Declared
+  deps versions always get precedence.
 
 # 0.22.110-alpha (2024-01-17 / 95c22dc)
 
