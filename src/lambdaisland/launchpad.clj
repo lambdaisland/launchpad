@@ -237,7 +237,6 @@
       (System/exit 0))
 
     (-> ctx
-        (update :env (fnil into {}) (System/getenv))
         (update :aliases (fnil into []) (map keyword arguments))
         (assoc :options (if (:emacs options)
                           (assoc options
@@ -543,7 +542,8 @@
    :project-root project-root
    :middleware middleware
    :java-args java-args
-   :eval-forms eval-forms})
+   :eval-forms eval-forms
+   :env (into {} (System/getenv))})
 
 (defn process-steps [ctx steps]
   (reduce #(%2 %1) ctx steps))

@@ -1,10 +1,9 @@
 # Unreleased
 
-## Added
-
-## Fixed
-
 ## Changed
+
+- Immediately initialize the context with the current system environment, so
+  that it is available even in `start-steps`.
 
 # 0.23.114-alpha (2024-01-22 / dd05ea6)
 
