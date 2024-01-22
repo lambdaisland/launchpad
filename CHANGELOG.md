@@ -2,9 +2,14 @@
 
 ## Added
 
-## Fixed
+- Additional flags for injection Portal, Sayid, debug-repl
+- `--vs-code` as alias for `--cider-nrepl`
+- Allow setting options as a map (:launchpad/options) in `deps.local.edn` /
+  `~/clojure/deps.edn`
 
 ## Changed
+
+- More succinct and nice looking output on boot. Only show nREPL port and launchpad flags.
 
 # 0.24.117-alpha (2024-01-22 / 8008ab4)
 

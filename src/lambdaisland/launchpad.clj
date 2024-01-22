@@ -22,10 +22,14 @@
     :parse-fn #(Integer/parseInt %)]
    ["-b" "--nrepl-bind ADDR" "Bind address of nrepl, by default \"127.0.0.1\"."
     :default "127.0.0.1"]
-   [nil "--cider-nrepl" "Include the CIDER nREPL middleware"]
-   [nil "--refactor-nrepl" "Include the refactor-nrepl middleware"]
-   [nil "--cider-connect" "Automatically connect CIDER"]
    [nil "--emacs" "Shorthand for --cider-nrepl --refactor-nrepl --cider-connect"]
+   [nil "--vs-code" "Alias for --cider-nrepl"]
+   [nil "--cider-nrepl" "Include CIDER nREPL dependency and middleware"]
+   [nil "--refactor-nrepl" "Include refactor-nrepl dependency and middleware"]
+   [nil "--cider-connect" "Automatically connect Emacs CIDER"]
+   [nil "--portal" "Include djblue/portal as a dependency, and define (user/portal)"]
+   [nil "--sayid" "Include Sayid dependency and middleware"]
+   [nil "--debug-repl" "Include gfredericks/debug-repl dependency and middleware"]
    [nil "--go" "Call (user/go) on boot"]])
 
 (def library-versions
@@ -143,15 +147,6 @@
   (fn [ctx]
     (update ctx :middleware (fnil into []) mws)))
 
-(defn compute-middleware
-  "Figure out the nREPL middleware based on CLI flags"
-  [{:keys [options] :as ctx}]
-  (cond-> ctx
-    (:cider-nrepl options)
-    ((add-nrepl-middleware 'cider.nrepl/cider-middleware))
-    (:refactor-nrepl options)
-    ((add-nrepl-middleware 'refactor-nrepl.middleware/wrap-refactor))))
-
 (defn library-in-deps? [ctx libname]
   (or (contains? (get-in ctx [:deps-edn :deps]) libname)
       (some
@@ -169,18 +164,52 @@
             (or version
                 (get library-versions libname)))))
 
-(defn compute-extra-deps [{:keys [options] :as ctx}]
+(defn find-launchpad-coords []
+  (when (.exists (io/file "bb.edn"))
+    (get-in (edn/read-string (slurp "bb.edn")) [:deps 'com.lambdaisland/launchpad])))
+
+(defn inject-optional-deps-and-middleware [{:keys [options] :as ctx}]
   (cond-> ctx
     true
-    (assoc-extra-dep 'nrepl/nrepl)
+    (-> (assoc-extra-dep 'nrepl/nrepl)
+        (assoc-extra-dep 'com.lambdaisland/launchpad (find-launchpad-coords)))
+
     (:cider-nrepl options)
-    (assoc-extra-dep 'cider/cider-nrepl (emacs-cider-coords))
+    (-> (assoc-extra-dep 'cider/cider-nrepl (emacs-cider-coords))
+        ((add-nrepl-middleware 'cider.nrepl/cider-middleware)))
+
     (:refactor-nrepl options)
-    (assoc-extra-dep 'refactor-nrepl/refactor-nrepl (emacs-refactor-nrepl-coords))))
+    (-> (assoc-extra-dep 'refactor-nrepl/refactor-nrepl (emacs-refactor-nrepl-coords))
+        ((add-nrepl-middleware 'refactor-nrepl.middleware/wrap-refactor)))
+
+    (:sayid options)
+    (-> (assoc-extra-dep 'com.billpiel/sayid)
+        ((add-nrepl-middleware 'com.billpiel.sayid.nrepl-middleware/wrap-sayid)))
+
+    (:debug-repl options)
+    (-> (assoc-extra-dep 'com.gfredericks/debug-repl)
+        ((add-nrepl-middleware 'com.gfredericks.debug-repl/wrap-debug-repl)))
+
+    (:portal options)
+    (-> (assoc-extra-dep 'djblue/portal)
+        (update :eval-forms (fnil conj [])
+                '(when-not (resolve 'user/portal)
+                   (do
+                     (intern 'user 'portal-instance (atom nil))
+                     (intern
+                      'user
+                      (with-meta 'portal {:doc "Open a Portal window and register a tap handler for it. The result can be
+  treated like an atom."})
+                      (fn portal
+                        []
+                        (let [p ((requiring-resolve 'portal.api/open) @user/portal-instance)]
+                          (reset! user/portal-instance p)
+                          (add-tap (requiring-resolve 'portal.api/submit))
+                          p)))))))))
 
 (defn get-nrepl-port [ctx]
   (assoc ctx :nrepl-port (or (get-in ctx [:options :nrepl-port])
-                          (free-port))))
+                             (free-port))))
 
 (defn get-nrepl-bind [ctx]
   (assoc ctx :nrepl-bind (get-in ctx [:options :nrepl-bind])))
@@ -203,6 +232,10 @@
         (update :main-opts (fnil into []) (concat
                                            (:launchpad/main-opts deps-system)
                                            (:launchpad/main-opts deps-local)))
+        (update :options
+                merge
+                (:launchpad/options deps-system)
+                (:launchpad/options deps-local))
         (assoc :deps-edn (merge-with (fn [a b]
                                        (cond
                                          (and (map? a) (map? b))
@@ -228,7 +261,20 @@
                 arguments
                 summary
                 errors]}
-        (tools-cli/parse-opts main-opts cli-opts)]
+        (tools-cli/parse-opts main-opts cli-opts)
+
+        options (merge options (:options ctx))
+        options (cond
+                  (:emacs options)
+                  (assoc (dissoc options :emacs)
+                         :cider-nrepl true
+                         :refactor-nrepl true
+                         :cider-connect true)
+                  (:vs-code options)
+                  (assoc (dissoc options :vs-code)
+                         :cider-nrepl true)
+                  :else
+                  options)]
     (when (or errors (:help options))
       (let [aliases (keys (:aliases deps-edn))]
         (println (str executable " <options> [" (str/join "|" (map #(subs (str %) 1) aliases)) "]+") ))
@@ -238,12 +284,7 @@
 
     (-> ctx
         (update :aliases (fnil into []) (map keyword arguments))
-        (assoc :options (if (:emacs options)
-                          (assoc options
-                                 :cider-nrepl true
-                                 :refactor-nrepl true
-                                 :cider-connect true)
-                          options)))))
+        (assoc :options options))))
 
 (defn wait-for-nrepl [{:keys [nrepl-port] :as ctx}]
   (let [timeout 300000]
@@ -382,13 +423,6 @@
                             ~(vec build-ids)))))
       ctx)))
 
-(defn find-launchpad-coords []
-  (when (.exists (io/file "bb.edn"))
-    (get-in (edn/read-string (slurp "bb.edn")) [:deps 'com.lambdaisland/launchpad])))
-
-(defn include-launchpad-deps [ctx]
-  (assoc-extra-dep ctx 'com.lambdaisland/launchpad (find-launchpad-coords)))
-
 (defn maybe-connect-emacs [{:keys [options nrepl-port project-root] :as ctx}]
   (when (:cider-connect options)
     (debug "Connecting CIDER with project-dir" project-root)
@@ -419,7 +453,9 @@
   (println (ansi-fg :green "Launching")
            (ansi-bold (ansi-fg :green "Clojure"))
            (ansi-fg :green "on nREPL port")
-           (ansi-fg :cyan (:nrepl-port ctx)))
+           (ansi-fg :magenta (:nrepl-port ctx)))
+  (println (ansi-fg :green "Options:")
+           (str/join ", " (map (comp (partial ansi-fg :magenta) name key) (filter (comp true? val) (:options ctx)))))
   ;; (println "Aliases:")
   ;; (doseq [a (:aliases ctx)] (println "-" a))
   ;; #_(apply println "Java flags: " (:java-args ctx))
@@ -493,11 +529,9 @@
                    handle-cli-args
                    get-nrepl-port
                    get-nrepl-bind
-                   compute-middleware
                    ;; inject dependencies and enable behavior
-                   compute-extra-deps
+                   inject-optional-deps-and-middleware
                    include-hot-reload-deps
-                   include-launchpad-deps
                    watch-dotenv
                    start-shadow-build
                    maybe-go
@@ -526,6 +560,7 @@
       (recur (.getParent (io/file dir))))))
 
 (defn initial-context [{:keys [steps executable project-root
+                               options
                                middleware
                                java-args
                                eval-forms]
@@ -543,7 +578,8 @@
    :middleware middleware
    :java-args java-args
    :eval-forms eval-forms
-   :env (into {} (System/getenv))})
+   :env (into {} (System/getenv))
+   :options options})
 
 (defn process-steps [ctx steps]
   (reduce #(%2 %1) ctx steps))
