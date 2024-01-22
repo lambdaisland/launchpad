@@ -3,13 +3,14 @@
 ## Added
 
 - Inject shadow-cljs deps when needed and not already present
-
-## Fixed
+- Support for more fine grained step customization with `start-steps`/`end-steps`/`pre-steps`/`post-steps`
 
 ## Changed
 
 - Check deps before injecting extra deps (cider, nrepl, shadow, etc). Declared
   deps versions always get precedence.
+- More succinct output while starting up
+- Show command line invocations that are being run
 
 # 0.22.110-alpha (2024-01-17 / 95c22dc)
 

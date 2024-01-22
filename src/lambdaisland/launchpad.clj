@@ -45,21 +45,42 @@
 (defn error [& args] (apply println (java.util.Date.) "[ERROR]" args))
 
 (defn shellquote [a]
-  (cond
-    (and (str/includes? a "\"")
-         (str/includes? a "'"))
-    (str "'"
-         (str/replace a "'" "'\"'\"'")
-         "'")
+  (let [a (str a)]
+    (cond
+      (and (str/includes? a "\"")
+           (str/includes? a "'"))
+      (str "'"
+           (str/replace a "'" "'\"'\"'")
+           "'")
 
-    (str/includes? a "'")
-    (str "\"" a "\"")
+      (str/includes? a "'")
+      (str "\"" a "\"")
 
-    (re-find #"\s|\"" a)
-    (str "'" a "'")
+      (re-find #"\s|\"" a)
+      (str "'" a "'")
 
-    :else
-    a))
+      :else
+      a)))
+
+(def ansi-fg-color-codes
+  {:black 30
+   :red 31
+   :green 32
+   :yellow 33
+   :blue 34
+   :magenta 35
+   :cyan 36
+   :white 37})
+
+(defn ansi-bold [& parts]
+  (str "\u001b[1m" (str/join " " parts) "\u001b[0m"))
+
+(defn ansi-fg [color & parts]
+  (str "\u001b[" (if (keyword? color)
+                   (get ansi-fg-color-codes color)
+                   color) "m"
+       (str/join " " parts)
+       "\u001b[0m"))
 
 (defn free-port
   "Find a free TCP port"
@@ -396,16 +417,20 @@
   ctx)
 
 (defn print-summary [ctx]
-  (println "Aliases:")
-  (doseq [a (:aliases ctx)] (println "-" a))
-  #_(apply println "Java flags: " (:java-args ctx))
-  (println "\nMiddleware: " )
-  (doseq [a (:middleware ctx)] (println "-" a))
-  (print "\nExtra Deps:")
-  (pprint/print-table (map (fn [[k v]]
-                             {:lib k
-                              :coords v})
-                           (:extra-deps ctx)))
+  (println (ansi-fg :green "Launching")
+           (ansi-bold (ansi-fg :green "Clojure"))
+           (ansi-fg :green "on nREPL port")
+           (ansi-fg :cyan (:nrepl-port ctx)))
+  ;; (println "Aliases:")
+  ;; (doseq [a (:aliases ctx)] (println "-" a))
+  ;; #_(apply println "Java flags: " (:java-args ctx))
+  ;; (println "\nMiddleware: " )
+  ;; (doseq [a (:middleware ctx)] (println "-" a))
+  ;; (print "\nExtra Deps:")
+  ;; (pprint/print-table (map (fn [[k v]]
+  ;;                            {:lib k
+  ;;                             :coords v})
+  ;;                          (:extra-deps ctx)))
   ctx)
 
 (defn pipe-process-output
@@ -443,9 +468,10 @@
                          (.directory working-dir))
           _ (.putAll (.environment proc-builder) (or env (:env ctx)))
           color (mod (hash (or prefix (first cmd))) 8)
-          prefix (str "\u001b[" (+ 30 color) "m[" (or prefix (first cmd)) "]\u001b[0m ")
+          prefix (ansi-fg (+ 30 color) (str "[" (or prefix (first cmd)) "] "))
           process (pipe-process-output (.start proc-builder) prefix)
           ctx (update ctx :processes (fnil conj []) process)]
+      (apply println (str prefix "$") (map shellquote cmd))
       (if background?
         ctx
         (let [exit (if timeout-ms
@@ -522,8 +548,21 @@
 (defn process-steps [ctx steps]
   (reduce #(%2 %1) ctx steps))
 
-(defn main [{:keys [steps] :or {steps default-steps} :as opts}]
-  (let [ctx (process-steps (initial-context opts) steps)
+(defn main [{:keys [steps
+                    start-steps
+                    end-steps
+                    pre-steps
+                    post-steps] :as opts}]
+  (let [ctx (process-steps (initial-context opts)
+                           (or steps
+                               (concat
+                                start-steps
+                                before-steps
+                                pre-steps
+                                [start-clojure-process]
+                                post-steps
+                                after-steps
+                                end-steps)))
         processes (:processes ctx)]
     (.addShutdownHook (Runtime/getRuntime)
                       (Thread. (fn [] (run! #(.destroy %) processes))))
