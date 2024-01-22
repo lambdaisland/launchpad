@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.lambdaisland</groupId>
   <artifactId>launchpad</artifactId>
-  <version>0.23.114-alpha</version>
+  <version>0.24.117-alpha</version>
   <name>launchpad</name>
   <description>Clojure dev process launcher</description>
   <url>https://github.com/lambdaisland/launchpad</url>
@@ -25,7 +25,7 @@
     <url>https://github.com/lambdaisland/launchpad</url>
     <connection>scm:git:git://github.com/lambdaisland/launchpad.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/lambdaisland/launchpad.git</developerConnection>
-    <tag>6c397debbf5230c6add86d17d167455e9ac694f1</tag>
+    <tag>a95a47be51e248843727778bdbbf90cafd1d4cdb</tag>
   </scm>
   <dependencies>
     <dependency>
@@ -102,7 +102,7 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <git-revision>6c397debbf5230c6add86d17d167455e9ac694f1</git-revision>
+              <git-revision>a95a47be51e248843727778bdbbf90cafd1d4cdb</git-revision>
             </manifestEntries>
           </archive>
         </configuration>
