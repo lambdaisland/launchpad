@@ -202,8 +202,8 @@
   treated like an atom."})
                       (fn portal
                         []
-                        (let [p ((requiring-resolve 'portal.api/open) @user/portal-instance)]
-                          (reset! user/portal-instance p)
+                        (let [p ((requiring-resolve 'portal.api/open) @@(resolve 'user/portal-instance))]
+                          (reset! @(resolve 'user/portal-instance) p)
                           (add-tap (requiring-resolve 'portal.api/submit))
                           p)))))))))
 
@@ -503,7 +503,7 @@
                          (.directory working-dir))
           _ (.putAll (.environment proc-builder) (or env (:env ctx)))
           color (mod (hash (or prefix (first cmd))) 8)
-          prefix (ansi-fg (+ 30 color) (str "[" (or prefix (first cmd)) "] "))
+          prefix (str "[" (ansi-fg (+ 30 color) (or prefix (first cmd))) "] ")
           process (pipe-process-output (.start proc-builder) prefix)
           ctx (update ctx :processes (fnil conj []) process)]
       (apply println (str prefix "$") (map shellquote cmd))

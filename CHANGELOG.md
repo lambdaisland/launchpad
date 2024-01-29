@@ -1,10 +1,8 @@
 # Unreleased
 
-## Added
-
 ## Fixed
 
-## Changed
+- Fix the `--portal`/`:portal` option
 
 # 0.25.120-alpha (2024-01-22 / cd0da82)
 
