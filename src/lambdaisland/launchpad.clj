@@ -494,9 +494,10 @@
 
 (defn run-process [{:keys [cmd prefix working-dir
                            background? timeout-ms check-exit-code? env
-                           color]
+                           color show-command?]
                     :or {working-dir "."
-                         check-exit-code? true}}]
+                         check-exit-code? true
+                         show-command? true}}]
   (fn [ctx]
     (let [working-dir  (io/file working-dir)
           proc-builder (doto (ProcessBuilder. (map str cmd))
@@ -506,7 +507,8 @@
           prefix (str "[" (ansi-fg (+ 30 color) (or prefix (first cmd))) "] ")
           process (pipe-process-output (.start proc-builder) prefix)
           ctx (update ctx :processes (fnil conj []) process)]
-      (apply println (str prefix "$") (map shellquote cmd))
+      (when show-command?
+        (apply println (str prefix "$") (map shellquote cmd)))
       (if background?
         ctx
         (let [exit (if timeout-ms
@@ -523,7 +525,8 @@
     (apply debug (map shellquote args))
     ((run-process {:cmd args
                    :ctx-process-key :clojure-process
-                   :background? true}) ctx)))
+                   :background? true
+                   :show-command? false}) ctx)))
 
 (def before-steps [read-deps-edn
                    handle-cli-args

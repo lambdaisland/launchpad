@@ -1,10 +1,10 @@
 # Unreleased
 
-## Added
-
-## Fixed
-
 ## Changed
+
+- Merge consecutive calls to `lambdaisland.launchpad.watcher/watch!`, so it's
+  easier to use from user code
+- Don't show full clojure invocation by default, can be seen with `--verbose`
 
 # 0.26.123-alpha (2024-01-29 / d471611)
 

@@ -15,6 +15,7 @@
            java.io.File
            io.methvin.watcher.DirectoryWatcher))
 
+(defonce handlers (atom nil))
 (defonce watchers (atom nil))
 
 (defn canonical-path [p]
@@ -50,7 +51,8 @@
   "Watch a number of files, takes a map from filename (string) to
   handler (receives a map with `:type` and `:path`, as with Beholder)."
   [file->handler]
-  (let [file->handler (update-keys file->handler canonical-path)
+  (let [file->handler (swap! handlers merge file->handler)
+        file->handler (update-keys file->handler canonical-path)
         directories (distinct (map parent-path (keys file->handler)))
         ;; in case of nested directories, only watch the top-most one
         directories (remove (fn [d]
