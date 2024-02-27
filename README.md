@@ -4,6 +4,8 @@
 [![cljdoc badge](https://cljdoc.org/badge/com.lambdaisland/launchpad)](https://cljdoc.org/d/com.lambdaisland/launchpad) [![Clojars Project](https://img.shields.io/clojars/v/com.lambdaisland/launchpad.svg)](https://clojars.org/com.lambdaisland/launchpad)
 <!-- /badges -->
 
+[**Watch the video!**](https://www.youtube.com/watch?v=kn9nvHEgzJY)
+
 Launchpad is a Clojure dev process launcher.
 
 It starts from these observations:
