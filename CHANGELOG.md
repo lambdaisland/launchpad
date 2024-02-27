@@ -2,9 +2,8 @@
 
 ## Added
 
-## Fixed
-
-## Changed
+- Print aliases being used
+- Add two-arg (uncurried) `run-process`
 
 # 0.27.126-alpha (2024-02-26 / 5f25d2d)
 

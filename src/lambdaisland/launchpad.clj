@@ -454,10 +454,14 @@
            (ansi-bold (ansi-fg :green "Clojure"))
            (ansi-fg :green "on nREPL port")
            (ansi-fg :magenta (:nrepl-port ctx)))
-  (println (ansi-fg :green "Options:")
-           (str/join ", " (map (comp (partial ansi-fg :magenta) name key) (filter (comp true? val) (:options ctx)))))
-  ;; (println "Aliases:")
-  ;; (doseq [a (:aliases ctx)] (println "-" a))
+  (let [opts (filter (comp true? val) (:options ctx))
+        aliases (:aliases ctx)]
+    (when (seq opts)
+      (println (ansi-fg :green "Options:")
+               (str/join ", " (map (comp (partial ansi-fg :magenta) name key) opts))))
+    (when (seq aliases)
+      (println (ansi-fg :green "Aliases:")
+               (str/join ", " (map (comp (partial ansi-fg :magenta) name) aliases)))))
   ;; #_(apply println "Java flags: " (:java-args ctx))
   ;; (println "\nMiddleware: " )
   ;; (doseq [a (:middleware ctx)] (println "-" a))
@@ -492,33 +496,36 @@
           (recur))))
     proc))
 
-(defn run-process [{:keys [cmd prefix working-dir
-                           background? timeout-ms check-exit-code? env
-                           color show-command?]
-                    :or {working-dir "."
-                         check-exit-code? true
-                         show-command? true}}]
-  (fn [ctx]
-    (let [working-dir  (io/file working-dir)
-          proc-builder (doto (ProcessBuilder. (map str cmd))
-                         (.directory working-dir))
-          _ (.putAll (.environment proc-builder) (or env (:env ctx)))
-          color (mod (hash (or prefix (first cmd))) 8)
-          prefix (str "[" (ansi-fg (+ 30 color) (or prefix (first cmd))) "] ")
-          process (pipe-process-output (.start proc-builder) prefix)
-          ctx (update ctx :processes (fnil conj []) process)]
-      (when show-command?
-        (apply println (str prefix "$") (map shellquote cmd)))
-      (if background?
-        ctx
-        (let [exit (if timeout-ms
-                     (.waitFor process timeout-ms TimeUnit/MILLISECONDS)
-                     (.waitFor process))]
-          (when (and check-exit-code? (not= 0 exit))
-            (do
-              (println (str prefix) "Exited with non-zero exit code: " exit)
-              (System/exit exit)))
-          ctx)))))
+(defn run-process
+  ([ctx opts]
+   ((run-process opts) ctx))
+  ([{:keys [cmd prefix working-dir
+            background? timeout-ms check-exit-code? env
+            color show-command?]
+     :or {working-dir "."
+          check-exit-code? true
+          show-command? true}}]
+   (fn [ctx]
+     (let [working-dir  (io/file working-dir)
+           proc-builder (doto (ProcessBuilder. (map str cmd))
+                          (.directory working-dir))
+           _ (.putAll (.environment proc-builder) (or env (:env ctx)))
+           color (mod (hash (or prefix (first cmd))) 8)
+           prefix (str "[" (ansi-fg (+ 30 color) (or prefix (first cmd))) "] ")
+           process (pipe-process-output (.start proc-builder) prefix)
+           ctx (update ctx :processes (fnil conj []) process)]
+       (when show-command?
+         (apply println (str prefix "$") (map shellquote cmd)))
+       (if background?
+         ctx
+         (let [exit (if timeout-ms
+                      (.waitFor process timeout-ms TimeUnit/MILLISECONDS)
+                      (.waitFor process))]
+           (when (and check-exit-code? (not= 0 exit))
+             (do
+               (println (str prefix) "Exited with non-zero exit code: " exit)
+               (System/exit exit)))
+           ctx))))))
 
 (defn start-clojure-process [{:keys [options aliases nrepl-port] :as ctx}]
   (let [args (clojure-cli-args ctx)]
