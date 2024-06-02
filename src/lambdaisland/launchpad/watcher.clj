@@ -21,8 +21,10 @@
 (defn canonical-path [p]
   (.getCanonicalPath (io/file p)))
 
-(defn parent-path [p]
-  (.getParent (io/file (canonical-path p))))
+(defn dir-path [p]
+  (if (.isDirectory (io/file p))
+    (canonical-path p)
+    (.getParent (io/file (canonical-path p)))))
 
 (require 'clojure.pprint)
 
@@ -53,7 +55,7 @@
   [file->handler]
   (let [file->handler (swap! handlers merge file->handler)
         file->handler (update-keys file->handler canonical-path)
-        directories (distinct (map parent-path (keys file->handler)))
+        directories (distinct (map dir-path (keys file->handler)))
         ;; in case of nested directories, only watch the top-most one
         directories (remove (fn [d]
                               (some #(and (not= d %)
@@ -67,11 +69,14 @@
               (for [dir directories]
                 (watch
                  (fn [{:keys [type path] :as event}]
-                   (if-let [f (get file->handler (str path))]
-                     (try
-                       (f event)
-                       (catch Exception e
-                         (prn e)))))
+                   (loop [path path]
+                     (if-let [f (get file->handler (str path))]
+                       (try
+                         (f event)
+                         (catch Exception e
+                           (prn e)))
+                       (when-let [p (.getParent path)]
+                         (recur p)))))
                  (str dir))))))))
 
 (comment
