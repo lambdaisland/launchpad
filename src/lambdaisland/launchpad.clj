@@ -318,7 +318,7 @@
                 `(future
                    (lambdaisland.launchpad.watcher/watch! ~watch-handlers))))))
 
-(defn clojure-cli-args [{:keys [aliases requires nrepl-port java-args middleware extra-deps paths alias-defs eval-forms] :as ctx}]
+(defn clojure-cli-args [{:keys [trace-load? aliases requires nrepl-port java-args middleware extra-deps paths alias-defs eval-forms] :as ctx}]
   (cond-> ["clojure"]
     :-> (into (map #(str "-J" %)) java-args)
     (seq aliases)
@@ -328,9 +328,14 @@
                              :paths paths
                              :aliases alias-defs})])
     :->
-    (into ["-M" "-e" (pr-str `(do ~(when (seq requires)
-                                     (list* 'require (map #(list 'quote %) requires)))
-                                  ~@eval-forms))])
+    (into ["-M" "-e" (pr-str `(do
+                                ~(when trace-load?
+                                   '(alter-var-root (var clojure.core/*loading-verbosely*) (constantly true)))
+                                ~(when (seq requires)
+                                   (cond->
+                                       (list* 'require (map #(list 'quote %) requires))
+                                     trace-load? (concat [:verbose])))
+                                ~@eval-forms))])
     middleware
     (into [])))
 
@@ -573,7 +578,8 @@
                                options
                                middleware
                                java-args
-                               eval-forms]
+                               eval-forms
+                               trace-load?]
                         :or {steps default-steps
                              project-root (find-project-root)
                              middleware []
@@ -589,7 +595,8 @@
    :java-args java-args
    :eval-forms eval-forms
    :env (into {} (System/getenv))
-   :options options})
+   :options options
+   :trace-load? trace-load?})
 
 (defn process-steps [ctx steps]
   (reduce #(%2 %1) ctx steps))
