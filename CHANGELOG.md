@@ -2,9 +2,8 @@
 
 ## Added
 
-## Fixed
-
-## Changed
+- Add new flag `:trace-load?`, which sets the `*loading-verbosely*` var at startup
+- Support watching entire directories through the file watcher interface
 
 # 0.28.129-alpha (2024-02-27 / 0c8c519)
 
