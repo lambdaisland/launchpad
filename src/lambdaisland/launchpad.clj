@@ -18,12 +18,12 @@
 (defonce processes (atom []))
 
 (defn cleanup [sig]
-  (println "Received" (str "SIG" sig))
+  (println "[launchpad] Received" (str sig))
   (doseq [process @processes]
-    (print "Killing" (.pid process))
+    (print "[launchpad] Killing pid" (str (.pid process) "..."))
     (flush)
     (.destroy process)
-    (println " ->" (.waitFor process))
+    (println (str " exit=" (.waitFor process)))
     (flush))
   (System/exit 0))
 
@@ -36,7 +36,6 @@
 
 (set-signal-handler! "INT" cleanup)
 (set-signal-handler! "TERM" cleanup)
-(set-signal-handler! "KILL" cleanup)
 
 (def cli-opts
   [["-h" "--help"]
