@@ -1,10 +1,8 @@
 # Unreleased
 
-## Added
-
-## Fixed
-
 ## Changed
+
+- Make sure child processes are killed when launchpad receives a INT/TERM/KILL signal
 
 # 0.29.135-alpha (2024-06-03 / 00df813)
 

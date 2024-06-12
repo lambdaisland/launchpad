@@ -15,6 +15,29 @@
    (java.net ServerSocket)
    (java.util.concurrent TimeUnit)))
 
+(defonce processes (atom []))
+
+(defn cleanup [sig]
+  (println "Received" (str "SIG" sig))
+  (doseq [process @processes]
+    (print "Killing" (.pid process))
+    (flush)
+    (.destroy process)
+    (println " ->" (.waitFor process))
+    (flush))
+  (System/exit 0))
+
+(defmacro set-signal-handler!
+  [signal f]
+  `(sun.misc.Signal/handle
+    (sun.misc.Signal. ~signal)
+    (proxy [sun.misc.SignalHandler] []
+      (handle [signal#] (~f signal#)))))
+
+(set-signal-handler! "INT" cleanup)
+(set-signal-handler! "TERM" cleanup)
+(set-signal-handler! "KILL" cleanup)
+
 (def cli-opts
   [["-h" "--help"]
    ["-v" "--verbose" "Print debug information"]
@@ -518,6 +541,7 @@
            color (mod (hash (or prefix (first cmd))) 8)
            prefix (str "[" (ansi-fg (+ 30 color) (or prefix (first cmd))) "] ")
            process (pipe-process-output (.start proc-builder) prefix)
+           _ (swap! processes conj process)
            ctx (update ctx :processes (fnil conj []) process)]
        (when show-command?
          (apply println (str prefix "$") (map shellquote cmd)))
@@ -617,7 +641,5 @@
                                 after-steps
                                 end-steps)))
         processes (:processes ctx)]
-    (.addShutdownHook (Runtime/getRuntime)
-                      (Thread. (fn [] (run! #(.destroy %) processes))))
     (System/exit (apply min (for [p processes]
                               (.waitFor p))))))
