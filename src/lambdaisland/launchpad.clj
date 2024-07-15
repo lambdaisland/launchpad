@@ -8,7 +8,8 @@
    [clojure.pprint :as pprint]
    [clojure.string :as str]
    [clojure.tools.cli :as tools-cli]
-   [lambdaisland.dotenv :as dotenv])
+   [lambdaisland.dotenv :as dotenv]
+   [lambdaisland.launchpad.log :refer :all])
   (:import
    (java.io InputStream OutputStream)
    (java.lang Process ProcessBuilder)
@@ -62,13 +63,6 @@
 ;;   project dependencies for runtime support. Only used when we are unable to find
 ;;   the current version in `bb.edn`"
 ;;   {:mvn/version "RELEASE"})
-
-(def verbose? (some #{"-v" "--verbose"} *command-line-args*))
-
-(defn debug [& args] (when verbose? (apply println (java.util.Date.) "[DEBUG]" args)))
-(defn info [& args] (apply println (java.util.Date.) "[INFO]" args))
-(defn warn [& args] (apply println (java.util.Date.) "[WARN]" args))
-(defn error [& args] (apply println (java.util.Date.) "[ERROR]" args))
 
 (defn shellquote [a]
   (let [a (str a)]
@@ -444,10 +438,11 @@
           (assoc :shadow-cljs/connect-ids connect-ids)
           (update :eval-forms (fnil conj [])
                   '(require 'lambdaisland.launchpad.shadow)
-                  `(apply
-                    lambdaisland.launchpad.shadow/start-builds!
-                    (filter (set (keys (:builds (lambdaisland.launchpad.shadow/merged-config))))
-                            ~(vec build-ids)))))
+                  `(let [config# (lambdaisland.launchpad.shadow/merged-config)]
+                     (apply
+                      lambdaisland.launchpad.shadow/start-builds! config#
+                      (filter (set (keys (:builds config#)))
+                              ~(vec build-ids))))))
       ctx)))
 
 (defn maybe-connect-emacs [{:keys [options nrepl-port project-root] :as ctx}]

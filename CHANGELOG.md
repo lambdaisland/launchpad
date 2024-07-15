@@ -2,9 +2,7 @@
 
 ## Added
 
-## Fixed
-
-## Changed
+- Warn when merging shadow-cljs configs and build-ids conflict
 
 # 0.30.139-alpha (2024-06-12 / 3221f94)
 

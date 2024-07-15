@@ -1,11 +1,14 @@
-(ns ^:no-doc ;TODO re-enable
-  lambdaisland.launchpad.shadow
-  (:require [clojure.java.io :as io]
-            [shadow.cljs.devtools.api :as api]
-            [shadow.cljs.devtools.config :as config]
-            [shadow.cljs.devtools.server :as server]
-            [shadow.cljs.devtools.server.runtime :as runtime]
-            [lambdaisland.classpath :as licp])
+(ns lambdaisland.launchpad.shadow
+  "Shadow-cljs support, generates a shadow-cljs config based on subprojects."
+  (:require
+   [clojure.java.io :as io]
+   [clojure.string :as str]
+   [lambdaisland.classpath :as licp]
+   [lambdaisland.launchpad.log :as log]
+   [shadow.cljs.devtools.api :as api]
+   [shadow.cljs.devtools.config :as config]
+   [shadow.cljs.devtools.server :as server]
+   [shadow.cljs.devtools.server.runtime :as runtime])
   (:import (java.nio.file Path)))
 
 (def process-root
@@ -53,42 +56,55 @@
   "Given multiple locations that contain a shadow-cljs.edn, merge them into a
   single config, where the path locations have been updated."
   [module-paths]
-  (-> (apply
-       merge-with
-       (fn [a b]
-         (cond
-           (and (map? a) (map? b))
-           (merge a b)
-           (and (set? a) (set? b))
-           (into a b)
-           :else
-           b))
-       (for [module-path module-paths
-             :let [module-root (.toAbsolutePath (Path/of module-path (into-array String [])))
-                   config-file (str (.resolve module-root "shadow-cljs.edn"))
-                   module-name (str (.getFileName module-root))]]
-         (-> config-file
-             read-shadow-config
-             (update
-              :builds
-              (fn [builds]
-                (into {}
-                      (map (fn [[k v]]
-                             (let [build-id k
-                                   ;; Not sure yet if this is a good idea
-                                   #_(if (qualified-keyword? k)
-                                       k
-                                       (keyword module-name (name k)))]
-                               [build-id
-                                (assoc (update-build-keys process-root module-root v)
-                                       :build-id build-id
-                                       :js-options (if (= "" module-path)
-                                                     {}
-                                                     {:js-package-dirs [(str module-path "/node_modules")]}))])))
+  (let [modules
+        (for [module-path module-paths
+              :let [module-root (.toAbsolutePath (Path/of module-path (into-array String [])))
+                    config-file (str (.resolve module-root "shadow-cljs.edn"))
+                    module-name (str (.getFileName module-root))]]
+          {:module-path module-path
+           :module-root module-root
+           :config-file config-file
+           :module-name module-name
+           :config (read-shadow-config config-file)})]
+    (doseq [[build-id modules]
+            (group-by :build-id (for [{:keys [config module-name]} modules
+                                      [build-id] (:builds config)]
+                                  {:build-id build-id
+                                   :module-name module-name}))
+            :when (< 1 (count modules))]
+      (log/warn "Shadow-cljs build-id conflict:" build-id "used in" (str/join ", " (map :module-name modules)) ". Ensure build-ids are unique to prevent issues."))
+    (-> (apply
+         merge-with
+         (fn [a b]
+           (cond
+             (and (map? a) (map? b))
+             (merge a b)
+             (and (set? a) (set? b))
+             (into a b)
+             :else
+             b))
+         (for [{:keys [config module-root module-path]} modules]
+           (update
+            config
+            :builds
+            (fn [builds]
+              (into {}
+                    (map (fn [[k v]]
+                           (let [build-id k
+                                 ;; Not sure yet if this is a good idea
+                                 #_(if (qualified-keyword? k)
+                                     k
+                                     (keyword module-name (name k)))]
+                             [build-id
+                              (assoc (update-build-keys process-root module-root v)
+                                     :build-id build-id
+                                     :js-options (if (= "" module-path)
+                                                   {}
+                                                   {:js-package-dirs [(str module-path "/node_modules")]}))])))
 
-                      builds))))))
-      (assoc :deps {})
-      (dissoc :source-paths :dependencies)))
+                    builds)))))
+        (assoc :deps {})
+        (dissoc :source-paths :dependencies))))
 
 (defn merged-config
   "Return a complete, combined, shadow-cljs config map, that combines all
@@ -96,18 +112,17 @@
   []
   (merged-shadow-config (find-shadow-roots)))
 
-(defn start-builds! [& build-ids]
+(defn start-builds! [config & build-ids]
   (when (nil? @runtime/instance-ref)
-    (let [config (merged-config)]
-      (server/start! config)
-      (doseq [build-id build-ids]
-        (-> (get-in config [:builds build-id])
-            (assoc :build-id build-id)
-            api/watch))
-      (loop []
-        (when (nil? @runtime/instance-ref)
-          (Thread/sleep 250)
-          (recur))))))
+    (server/start! config)
+    (doseq [build-id build-ids]
+      (-> (get-in config [:builds build-id])
+          (assoc :build-id build-id)
+          api/watch))
+    (loop []
+      (when (nil? @runtime/instance-ref)
+        (Thread/sleep 250)
+        (recur)))))
 
 #_(start-builds :main)
 #_(require 'shadow.build)

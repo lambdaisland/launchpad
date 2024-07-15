@@ -5,15 +5,17 @@
   specific directories. This can be done with [[watch!]], which will start the
   minimum number of watchers to cover all directories, and will dispatch to the
   right handler based on the changed file."
-  (:require [nextjournal.beholder :as beholder]
-            [clojure.java.io :as io])
-  (:import java.util.regex.Pattern
-           java.nio.file.LinkOption
-           java.nio.file.Files
-           java.nio.file.Paths
-           java.nio.file.Path
-           java.io.File
-           io.methvin.watcher.DirectoryWatcher))
+  (:require
+   [nextjournal.beholder :as beholder]
+   [clojure.java.io :as io])
+  (:import
+   java.util.regex.Pattern
+   java.nio.file.LinkOption
+   java.nio.file.Files
+   java.nio.file.Paths
+   java.nio.file.Path
+   java.io.File
+   io.methvin.watcher.DirectoryWatcher))
 
 (defonce handlers (atom nil))
 (defonce watchers (atom nil))
