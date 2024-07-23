@@ -4,6 +4,8 @@
 
 ## Fixed
 
+- Update the launchpad version loaded at runtime
+
 ## Changed
 
 # 0.31.142-alpha (2024-07-15 / 35813ab)
