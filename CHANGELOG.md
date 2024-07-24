@@ -4,6 +4,8 @@
 
 ## Fixed
 
+- Re-release of previous version (missed an unmerged commit)
+
 ## Changed
 
 # 0.32.144-alpha (2024-07-24 / 9e20958)
