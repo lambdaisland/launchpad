@@ -2,7 +2,8 @@
 
  :deps
  {org.clojure/clojure {:mvn/version "1.11.2"}
-  com.lambdaisland/dotenv {:mvn/version "0.2.5"}}
+  com.lambdaisland/dotenv {:mvn/version "0.2.5"}
+  com.lambdaisland/cli {:mvn/version "0.18.74"}}
 
  :aliases
  {:clojure

@@ -1,30 +1,21 @@
 # Unreleased
 
-## Added
-
-## Fixed
-
 ## Changed
 
-# 0.33.149-alpha (2024-07-24 / cf4dc37)
+- Use lambdaisland/cli for cli arg handling
+- Dependency upgrades
 
-## Added
+# 0.33.149-alpha (2024-07-24 / cf4dc37)
 
 ## Fixed
 
 - Re-release of previous version (missed an unmerged commit)
 
-## Changed
-
 # 0.32.144-alpha (2024-07-24 / 9e20958)
-
-## Added
 
 ## Fixed
 
 - Update the launchpad version loaded at runtime
-
-## Changed
 
 # 0.31.142-alpha (2024-07-15 / 35813ab)
 

@@ -7,9 +7,9 @@
    [clojure.java.shell :as shell]
    [clojure.pprint :as pprint]
    [clojure.string :as str]
-   [clojure.tools.cli :as tools-cli]
    [lambdaisland.dotenv :as dotenv]
-   [lambdaisland.launchpad.log :refer :all])
+   [lambdaisland.launchpad.log :refer :all]
+   [lambdaisland.cli :as cli])
   (:import
    (java.io InputStream OutputStream)
    (java.lang Process ProcessBuilder)
@@ -38,22 +38,23 @@
 (set-signal-handler! "INT" cleanup)
 (set-signal-handler! "TERM" cleanup)
 
-(def cli-opts
-  [["-h" "--help"]
-   ["-v" "--verbose" "Print debug information"]
-   ["-p" "--nrepl-port PORT" "Start nrepl on port. Defaults to 0 (= random)"
-    :parse-fn #(Integer/parseInt %)]
-   ["-b" "--nrepl-bind ADDR" "Bind address of nrepl, by default \"127.0.0.1\"."
-    :default "127.0.0.1"]
-   [nil "--emacs" "Shorthand for --cider-nrepl --refactor-nrepl --cider-connect"]
-   [nil "--vs-code" "Alias for --cider-nrepl"]
-   [nil "--cider-nrepl" "Include CIDER nREPL dependency and middleware"]
-   [nil "--refactor-nrepl" "Include refactor-nrepl dependency and middleware"]
-   [nil "--cider-connect" "Automatically connect Emacs CIDER"]
-   [nil "--portal" "Include djblue/portal as a dependency, and define (user/portal)"]
-   [nil "--sayid" "Include Sayid dependency and middleware"]
-   [nil "--debug-repl" "Include gfredericks/debug-repl dependency and middleware"]
-   [nil "--go" "Call (user/go) on boot"]])
+(def flags
+  ["-v,--verbose" "Print debug information"
+   "-p,--nrepl-port PORT" {:doc "Start nrepl on port. Defaults to 0 (= random)"
+                           :parse-fn #(Integer/parseInt %)}
+   "-b,--nrepl-bind ADDR" {:doc "Bind address of nrepl, by default \"127.0.0.1\"."
+                           :default "127.0.0.1"}
+   "--emacs" {:doc "Shorthand for --cider-nrepl --refactor-nrepl --cider-connect"
+              :handler (fn [ctx] (assoc ctx :cider-nrepl :refactor-nrepl :cider-connect))}
+   "--vs-code" {:doc "Alias for --cider-nrepl"
+                :handler (fn [ctx] (assoc ctx :cider-nrepl))}
+   "--cider-nrepl" "Include CIDER nREPL dependency and middleware"
+   "--refactor-nrepl" "Include refactor-nrepl dependency and middleware"
+   "--cider-connect" "Automatically connect Emacs CIDER"
+   "--portal" "Include djblue/portal as a dependency, and define (user/portal)"
+   "--sayid" "Include Sayid dependency and middleware"
+   "--debug-repl" "Include gfredericks/debug-repl dependency and middleware"
+   "--go" "Call (user/go) on boot"])
 
 (def library-versions
   (:deps (edn/read-string (slurp (io/resource "launchpad/deps.edn")))))
@@ -190,23 +191,23 @@
     (-> (assoc-extra-dep 'nrepl/nrepl)
         (assoc-extra-dep 'com.lambdaisland/launchpad (find-launchpad-coords)))
 
-    (:cider-nrepl options)
+    (:cider-nrepl ctx)
     (-> (assoc-extra-dep 'cider/cider-nrepl (emacs-cider-coords))
         ((add-nrepl-middleware 'cider.nrepl/cider-middleware)))
 
-    (:refactor-nrepl options)
+    (:refactor-nrepl ctx)
     (-> (assoc-extra-dep 'refactor-nrepl/refactor-nrepl (emacs-refactor-nrepl-coords))
         ((add-nrepl-middleware 'refactor-nrepl.middleware/wrap-refactor)))
 
-    (:sayid options)
+    (:sayid ctx)
     (-> (assoc-extra-dep 'com.billpiel/sayid)
         ((add-nrepl-middleware 'com.billpiel.sayid.nrepl-middleware/wrap-sayid)))
 
-    (:debug-repl options)
+    (:debug-repl ctx)
     (-> (assoc-extra-dep 'com.gfredericks/debug-repl)
         ((add-nrepl-middleware 'com.gfredericks.debug-repl/wrap-debug-repl)))
 
-    (:portal options)
+    (:portal ctx)
     (-> (assoc-extra-dep 'djblue/portal)
         (update :eval-forms (fnil conj [])
                 '(when-not (resolve 'user/portal)
@@ -224,11 +225,11 @@
                           p)))))))))
 
 (defn get-nrepl-port [ctx]
-  (assoc ctx :nrepl-port (or (get-in ctx [:options :nrepl-port])
+  (assoc ctx :nrepl-port (or (:nrepl-port ctx)
                              (free-port))))
 
 (defn get-nrepl-bind [ctx]
-  (assoc ctx :nrepl-bind (get-in ctx [:options :nrepl-bind])))
+  (assoc ctx :nrepl-bind (:nrepl-bind ctx)))
 
 (defn maybe-read-edn [f]
   (when (.exists f) (edn/read-string (slurp f))))
@@ -248,10 +249,9 @@
         (update :main-opts (fnil into []) (concat
                                            (:launchpad/main-opts deps-system)
                                            (:launchpad/main-opts deps-local)))
-        (update :options
-                merge
-                (:launchpad/options deps-system)
-                (:launchpad/options deps-local))
+        (merge
+         (:launchpad/options deps-system)
+         (:launchpad/options deps-local))
         (assoc :deps-edn (merge-with (fn [a b]
                                        (cond
                                          (and (map? a) (map? b))
@@ -273,34 +273,17 @@
                                   (:aliases deps-local))))))
 
 (defn handle-cli-args [{:keys [executable project-root deps-edn main-opts] :as ctx}]
-  (let [{:keys [options
-                arguments
-                summary
-                errors]}
-        (tools-cli/parse-opts main-opts cli-opts)
-
-        options (merge options (:options ctx))
-        options (cond
-                  (:emacs options)
-                  (assoc (dissoc options :emacs)
-                         :cider-nrepl true
-                         :refactor-nrepl true
-                         :cider-connect true)
-                  (:vs-code options)
-                  (assoc (dissoc options :vs-code)
-                         :cider-nrepl true)
-                  :else
-                  options)]
-    (when (or errors (:help options))
-      (let [aliases (keys (:aliases deps-edn))]
-        (println (str executable " <options> [" (str/join "|" (map #(subs (str %) 1) aliases)) "]+") ))
-      (println)
-      (println summary)
-      (System/exit 0))
-
-    (-> ctx
-        (update :aliases (fnil into []) (map keyword arguments))
-        (assoc :options options))))
+  (cond
+    (:emacs ctx)
+    (assoc (dissoc ctx :emacs)
+           :cider-nrepl true
+           :refactor-nrepl true
+           :cider-connect true)
+    (:vs-code ctx)
+    (assoc (dissoc ctx :vs-code)
+           :cider-nrepl true)
+    :else
+    ctx))
 
 (defn wait-for-nrepl [{:keys [nrepl-port] :as ctx}]
   (let [timeout 300000]
@@ -335,7 +318,7 @@
                    (lambdaisland.launchpad.watcher/watch! ~watch-handlers))))))
 
 (defn clojure-cli-args [{:keys [trace-load? aliases requires nrepl-port java-args middleware extra-deps paths alias-defs eval-forms] :as ctx}]
-  (cond-> ["clojure"]
+  (cond-> (:clojure-cli-command ctx ["clojure"])
     :-> (into (map #(str "-J" %)) java-args)
     (seq aliases)
     (conj (str/join (cons "-A" aliases)))
@@ -357,7 +340,7 @@
 
 (defn maybe-go [{:keys [options] :as ctx}]
   (cond-> ctx
-    (:go options)
+    (:go ctx)
     (update :eval-forms (fnil conj [])
             '(try
                (user/go)
@@ -446,7 +429,7 @@
       ctx)))
 
 (defn maybe-connect-emacs [{:keys [options nrepl-port project-root] :as ctx}]
-  (when (:cider-connect options)
+  (when (:cider-connect ctx)
     (debug "Connecting CIDER with project-dir" project-root)
     (try
       (eval-emacs
@@ -550,7 +533,7 @@
                (System/exit exit)))
            ctx))))))
 
-(defn start-clojure-process [{:keys [options aliases nrepl-port] :as ctx}]
+(defn start-clojure-process [{:keys [aliases nrepl-port] :as ctx}]
   (let [args (clojure-cli-args ctx)]
     (apply debug (map shellquote args))
     ((run-process {:cmd args
@@ -592,48 +575,46 @@
       dir
       (recur (.getParent (io/file dir))))))
 
-(defn initial-context [{:keys [steps executable project-root
-                               options
-                               middleware
-                               java-args
-                               eval-forms
-                               trace-load?]
-                        :or {steps default-steps
-                             project-root (find-project-root)
-                             middleware []
-                             java-args []
-                             eval-forms []}}]
-  {:main-opts *command-line-args*
-   :executable (or executable
-                   (str/replace *file*
-                                (str project-root "/")
-                                ""))
-   :project-root project-root
-   :middleware middleware
-   :java-args java-args
-   :eval-forms eval-forms
-   :env (into {} (System/getenv))
-   :options options
-   :trace-load? trace-load?})
+(defn initial-context [ctx]
+  (let [project-root (:project-root ctx (find-project-root))]
+    (merge
+     {:main-opts *command-line-args*
+      :executable (or (:executable ctx)
+                      (str/replace *file*
+                                   (str project-root "/")
+                                   ""))
+      :env (into {} (System/getenv))
+      :steps (:default-steps ctx)
+      :project-root project-root
+      :middleware []
+      :java-args []
+      :eval-forms []}
+     ctx)))
 
 (defn process-steps [ctx steps]
   (reduce #(%2 %1) ctx steps))
 
-(defn main [{:keys [steps
-                    start-steps
-                    end-steps
-                    pre-steps
-                    post-steps] :as opts}]
-  (let [ctx (process-steps (initial-context opts)
-                           (or steps
-                               (concat
-                                start-steps
-                                before-steps
-                                pre-steps
-                                [start-clojure-process]
-                                post-steps
-                                after-steps
-                                end-steps)))
+(defn run-launchpad [{:keys [steps
+                             start-steps
+                             end-steps
+                             pre-steps
+                             post-steps] :as ctx}]
+  (let [ctx (process-steps
+             ctx
+             (or steps
+                 (concat
+                  start-steps
+                  before-steps
+                  pre-steps
+                  [start-clojure-process]
+                  post-steps
+                  after-steps
+                  end-steps)))
         processes (:processes ctx)]
     (System/exit (apply min (for [p processes]
                               (.waitFor p))))))
+
+(defn main [opts]
+  (cli/dispatch* {:init (initial-context opts)
+                  :flags flags
+                  :command #'run-launchpad}))
