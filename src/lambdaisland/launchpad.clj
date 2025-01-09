@@ -45,9 +45,12 @@
    "-b,--nrepl-bind ADDR" {:doc "Bind address of nrepl, by default \"127.0.0.1\"."
                            :default "127.0.0.1"}
    "--emacs" {:doc "Shorthand for --cider-nrepl --refactor-nrepl --cider-connect"
-              :handler (fn [ctx] (assoc ctx :cider-nrepl :refactor-nrepl :cider-connect))}
+              :handler (fn [ctx] (assoc ctx
+                                        :cider-nrepl true
+                                        :refactor-nrepl true
+                                        :cider-connect true))}
    "--vs-code" {:doc "Alias for --cider-nrepl"
-                :handler (fn [ctx] (assoc ctx :cider-nrepl))}
+                :handler (fn [ctx] (assoc ctx :cider-nrepl true))}
    "--cider-nrepl" "Include CIDER nREPL dependency and middleware"
    "--refactor-nrepl" "Include refactor-nrepl dependency and middleware"
    "--cider-connect" "Automatically connect Emacs CIDER"
@@ -459,7 +462,7 @@
            (ansi-bold (ansi-fg :green "Clojure"))
            (ansi-fg :green "on nREPL port")
            (ansi-fg :magenta (:nrepl-port ctx)))
-  (let [opts (filter (comp true? val) (:options ctx))
+  (let [opts (filter (comp true? val) ctx)
         aliases (:aliases ctx)]
     (when (seq opts)
       (println (ansi-fg :green "Options:")
