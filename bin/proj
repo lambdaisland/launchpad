@@ -1,14 +1,27 @@
 #!/usr/bin/env bb
 
 (ns proj
-  (:require [lioss.main :as lioss]))
+  (:require
+   [borkdude.rewrite-edn :as re]
+   [lioss.main :as lioss]))
+
+(def versions-file "resources/launchpad/deps.edn")
+
+(defn set-launchpad-version [{:keys [version] :as opts}]
+  (spit versions-file
+        (-> versions-file
+            slurp
+            re/parse-string
+            (re/assoc-in [:deps 'com.lambdaisland/launchpad :mvn/version] version)))
+  opts)
 
 (lioss/main
- {:license           :mpl
-  :inception-year    2022
-  :description       "Clojure dev process launcher"
-  :group-id          "com.lambdaisland"
-  :version-qualifier "alpha"
+ {:license                   :mpl
+  :inception-year            2022
+  :description               "Clojure dev process launcher"
+  :group-id                  "com.lambdaisland"
+  :version-qualifier         "alpha"
+  :pre-release-hook          set-launchpad-version
   :aliases-as-scope-provided [:clojure]})
 
 ;; Local Variables:

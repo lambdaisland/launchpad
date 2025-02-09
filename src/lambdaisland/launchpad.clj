@@ -39,25 +39,35 @@
 (set-signal-handler! "TERM" cleanup)
 
 (def flags
-  ["-v,--verbose" "Print debug information"
-   "-p,--nrepl-port PORT" {:doc "Start nrepl on port. Defaults to 0 (= random)"
-                           :parse-fn #(Integer/parseInt %)}
-   "-b,--nrepl-bind ADDR" {:doc "Bind address of nrepl, by default \"127.0.0.1\"."
-                           :default "127.0.0.1"}
-   "--emacs" {:doc "Shorthand for --cider-nrepl --refactor-nrepl --cider-connect"
-              :handler (fn [ctx] (assoc ctx
-                                        :cider-nrepl true
-                                        :refactor-nrepl true
-                                        :cider-connect true))}
-   "--vs-code" {:doc "Alias for --cider-nrepl"
-                :handler (fn [ctx] (assoc ctx :cider-nrepl true))}
-   "--cider-nrepl" "Include CIDER nREPL dependency and middleware"
-   "--refactor-nrepl" "Include refactor-nrepl dependency and middleware"
-   "--cider-connect" "Automatically connect Emacs CIDER"
-   "--portal" "Include djblue/portal as a dependency, and define (user/portal)"
-   "--sayid" "Include Sayid dependency and middleware"
-   "--debug-repl" "Include gfredericks/debug-repl dependency and middleware"
-   "--go" "Call (user/go) on boot"])
+  ["-v,--verbose"          {:doc   "Print debug information"
+                            :value true}
+   "-p,--nrepl-port PORT"  {:doc      "Start nrepl on port. Defaults to 0 (= random)"
+                            :parse-fn #(Integer/parseInt %)}
+   "-b,--nrepl-bind ADDR"  {:doc     "Bind address of nrepl, by default \"127.0.0.1\"."
+                            :default "127.0.0.1"}
+   "--[no-]emacs"          {:doc     "Shorthand for --cider-nrepl --refactor-nrepl --cider-connect"
+                            :handler (fn [ctx v]
+                                       (assoc ctx
+                                              :cider-nrepl v
+                                              :refactor-nrepl v
+                                              :cider-connect v))}
+   "--[no-]vs-code"        {:doc     "Alias for --cider-nrepl"
+                            :handler (fn [ctx] (assoc ctx :cider-nrepl true))}
+   "--[no-]cider-nrepl"    {:doc   "Include CIDER nREPL dependency and middleware"
+                            :value true}
+   "--[no-]refactor-nrepl" {:doc   "Include refactor-nrepl dependency and middleware"
+                            :value true}
+   "--[no-]cider-connect"  {:doc   "Automatically connect Emacs CIDER"
+                            :value true}
+   "--[no-]portal"         {:doc   "Include djblue/portal as a dependency, and define (user/portal)"
+                            :value true}
+   "--[no-]sayid"          {:doc   "Include Sayid dependency and middleware"
+                            :value true}
+   "--[no-]debug-repl"     {:doc   "Include gfredericks/debug-repl dependency and middleware"
+                            :value true}
+   "--[no-]go"             {:doc "Call (user/go) on boot"}
+   "--[no-]namespace-maps" {:doc   "Disable *print-namespace-maps* through nREPL middleware"
+                            :value true}])
 
 (def library-versions
   (:deps (edn/read-string (slurp (io/resource "launchpad/deps.edn")))))
@@ -209,6 +219,9 @@
     (:debug-repl ctx)
     (-> (assoc-extra-dep 'com.gfredericks/debug-repl)
         ((add-nrepl-middleware 'com.gfredericks.debug-repl/wrap-debug-repl)))
+
+    (false? (:namespace-maps ctx))
+    ((add-nrepl-middleware 'lambdaisland.launchpad.middleware/wrap-no-print-namespace-maps))
 
     (:portal ctx)
     (-> (assoc-extra-dep 'djblue/portal)
@@ -544,8 +557,7 @@
                    :background? true
                    :show-command? false}) ctx)))
 
-(def before-steps [read-deps-edn
-                   handle-cli-args
+(def before-steps [handle-cli-args
                    get-nrepl-port
                    get-nrepl-bind
                    ;; inject dependencies and enable behavior
@@ -580,19 +592,19 @@
 
 (defn initial-context [ctx]
   (let [project-root (:project-root ctx (find-project-root))]
-    (merge
-     {:main-opts *command-line-args*
-      :executable (or (:executable ctx)
-                      (str/replace *file*
-                                   (str project-root "/")
-                                   ""))
-      :env (into {} (System/getenv))
-      :steps (:default-steps ctx)
-      :project-root project-root
-      :middleware []
-      :java-args []
-      :eval-forms []}
-     ctx)))
+    (-> {:main-opts *command-line-args*
+         :executable (or (:executable ctx)
+                         (str/replace *file*
+                                      (str project-root "/")
+                                      ""))
+         :env (into {} (System/getenv))
+         :steps (:default-steps ctx)
+         :project-root project-root
+         :middleware []
+         :java-args []
+         :eval-forms []}
+        (merge ctx)
+        read-deps-edn)))
 
 (defn process-steps [ctx steps]
   (reduce #(%2 %1) ctx steps))

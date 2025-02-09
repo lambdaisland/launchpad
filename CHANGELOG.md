@@ -2,9 +2,13 @@
 
 ## Added
 
-## Fixed
+- `--[no-]namespace-maps` option (disable `*print-namespace-maps*`)
 
 ## Changed
+
+- Boolean flags are now defined as `--[no-]...`, so that you can override
+  local/global/project defaults from the command line, e.g. `bin/launchpad
+  --no-go`
 
 # 0.35.156-alpha (2025-01-09 / 0592491)
 
