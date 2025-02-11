@@ -5,6 +5,7 @@
 ;; this setting is off from the start.
 (defn wrap-no-print-namespace-maps
   "Bind *print-namespace-maps* to false during nREPL requests"
+  {:nrepl.middleware/descriptor {}}
   [h]
   (fn [msg]
     (binding [*print-namespace-maps* false]

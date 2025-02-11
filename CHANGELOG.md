@@ -1,10 +1,8 @@
 # Unreleased
 
-## Added
-
 ## Fixed
 
-## Changed
+- Add an `:nrepl.middleware/descriptor` to silence the warning
 
 # 0.36.159-alpha (2025-02-09 / eafa135)
 
