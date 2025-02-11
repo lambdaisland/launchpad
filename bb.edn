@@ -4,4 +4,4 @@
   com.lambdaisland/launchpad {:local/root "."}
   com.lambdaisland/cli       {:mvn/version "0.22.87"}
   lambdaisland/open-source   {:git/url "https://github.com/lambdaisland/open-source"
-                              :git/sha "6cb675d2adae284021f8cd94dcfbd078986b39bd"}}}
+                              :git/sha "0bd06e00f3b930d9a0fdd0ed90d47a9a333b19da"}}}
