@@ -122,14 +122,20 @@ configure launchpad.
  ;; but some extra keys are supported to influence launchpad itself
  :launchpad/aliases [:proj1] ; additional aliases, will be added to whatever
                              ; aliases you specify on the command line
+							 
  :launchpad/main-opts ["--emacs"] ; additional CLI flags, so you can encode your
                                   ; own preferences
+
+ ;; takes options as a map and merges it into the `ctx`
+ :launchpad/options {:portal true
+                     :nrepl-port 1234}
+
  :launchpad/shadow-build-ids [] ; which shadow builds to start, although it may
                                 ; be preferable to configure this as part of
                                 ; specific aliases in your main deps.edn
+
  ;; which shadow builds to automatically connect to if `--emacs` flag is provided
- :launchpad/shadow-connect-ids [] 
- }
+ :launchpad/shadow-connect-ids []}
 ```
 
 You don't have to stop there, you could add a `dev/user.clj` (add "dev" to your
