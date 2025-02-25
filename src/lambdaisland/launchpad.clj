@@ -615,7 +615,7 @@
                              pre-steps
                              post-steps] :as ctx}]
   (let [ctx (process-steps
-             ctx
+             (assoc ctx :aliases (map keyword (::cli/argv ctx)))
              (or steps
                  (concat
                   start-steps
