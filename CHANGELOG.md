@@ -1,3 +1,11 @@
+# Unreleased
+
+## Added
+
+## Fixed
+
+## Changed
+
 # 0.40.174-alpha (2025-02-25 / fcc2ece)
 
 ## Fixed
