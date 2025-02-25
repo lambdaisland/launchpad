@@ -1,10 +1,8 @@
 # Unreleased
 
-## Added
-
 ## Fixed
 
-## Changed
+- Honor aliases both from `deps.local.edn` and CLI args
 
 # 0.39.171-alpha (2025-02-25 / 0731c0a)
 
