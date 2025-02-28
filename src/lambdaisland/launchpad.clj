@@ -1,13 +1,11 @@
 (ns lambdaisland.launchpad
   (:require
-   [babashka.process :refer [process]]
    [babashka.wait :as wait]
    [clojure.edn :as edn]
    [clojure.java.io :as io]
    [clojure.java.shell :as shell]
-   [clojure.pprint :as pprint]
    [clojure.string :as str]
-   [lambdaisland.dotenv :as dotenv]
+   [lambdaisland.launchpad.env :as env]
    [lambdaisland.launchpad.log :refer :all]
    [lambdaisland.cli :as cli])
   (:import
@@ -395,22 +393,27 @@
                         ;; FIXME: this means we don't "see" deps.local.edn if it
                         ;; gets created after launchpad started, we can do
                         ;; better than that.
-                        ['(lambdaisland.classpath.watch-deps/canonical-path "deps.local.edn")]
-                        [])
+                        ['(lambdaisland.classpath.watch-deps/canonical-path "deps.local.edn")])
          :launchpad/extra-deps `'~(:extra-deps <>)}))))
 
 (defn watch-dotenv [ctx]
   (-> ctx
       (assoc-extra-dep 'com.github.jnr/jnr-posix)
+      (assoc-extra-dep 'com.lambdaisland/classpath)
       (update :java-args conj
               "--add-opens=java.base/java.lang=ALL-UNNAMED"
               "--add-opens=java.base/java.util=ALL-UNNAMED")
-      (update :env #(apply merge % (map (fn [p]
-                                          (when (.exists (io/file p))
-                                            (dotenv/parse-dotenv (slurp p))))
-                                        [".env" ".env.local"])))
-      (update :requires conj 'lambdaisland.launchpad.env)
-      (register-watch-handlers '(lambdaisland.launchpad.env/watch-handlers))))
+      (update :env #(->> env/watch-paths
+                         (map env/->path)
+                         (filter env/exists?)
+                         (map env/parse-dotenv)
+                         (apply merge %)))
+      (update :requires concat ['lambdaisland.launchpad.env 'lambdaisland.launchpad.env.hacks])
+      (register-watch-handlers
+       `(lambdaisland.launchpad.env.hacks/watch-handlers
+         {:watch-paths ~(mapv #(list '.resolve 'lambdaisland.classpath.watch-deps/process-root-path %)
+                              env/watch-paths)
+          :parse-fn   'lambdaisland.launchpad.env/parse-dotenv}))))
 
 (defn start-shadow-build [{:keys [deps-edn aliases] :as ctx}]
   (let [build-ids (->> aliases

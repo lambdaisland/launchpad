@@ -29,6 +29,16 @@
 ## Fixed
 
 - Add an `:nrepl.middleware/descriptor` to silence the warning
+- Correct dotenv watch semantics. No matter the initial state we fix the behavior to achieve:
+
+  | .env  | .env.local | Values From  |
+  | ----- |----------- | ------------ |
+  | ✅    | ✅         | `.env.local` |
+  | ✅    | ❌         | `.env`       |
+  | ❌    | ✅         | `.env.local` |
+  | ❌    | ❌         | latest state |
+
+  The last line means we currently do not keep track and therefore cannot remove already set environment variables.
 
 # 0.36.159-alpha (2025-02-09 / eafa135)
 
