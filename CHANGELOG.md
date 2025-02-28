@@ -1,10 +1,8 @@
 # Unreleased
 
-## Added
-
 ## Fixed
 
-## Changed
+- correctly handle .env / .env.local file creation and deletion 
 
 # 0.40.174-alpha (2025-02-25 / fcc2ece)
 
