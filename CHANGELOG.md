@@ -1,10 +1,10 @@
 # Unreleased
 
-## Added
-
 ## Fixed
 
-## Changed
+- Make sure CLI flags can negate options set in `.clojure/deps.edn` /
+  `deps.local.edn`, e.g. `{:launchpad/options {:emacs true}}` with
+  `--no-cider-connect`
 
 # 0.41.179-alpha (2025-02-28 / d65caab)
 

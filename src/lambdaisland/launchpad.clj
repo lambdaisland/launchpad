@@ -43,29 +43,16 @@
                             :parse-fn #(Integer/parseInt %)}
    "-b,--nrepl-bind ADDR"  {:doc     "Bind address of nrepl, by default \"127.0.0.1\"."
                             :default "127.0.0.1"}
-   "--[no-]emacs"          {:doc     "Shorthand for --cider-nrepl --refactor-nrepl --cider-connect"
-                            :handler (fn [ctx v]
-                                       (assoc ctx
-                                              :cider-nrepl v
-                                              :refactor-nrepl v
-                                              :cider-connect v))}
-   "--[no-]vs-code"        {:doc     "Alias for --cider-nrepl"
-                            :handler (fn [ctx] (assoc ctx :cider-nrepl true))}
-   "--[no-]cider-nrepl"    {:doc   "Include CIDER nREPL dependency and middleware"
-                            :value true}
-   "--[no-]refactor-nrepl" {:doc   "Include refactor-nrepl dependency and middleware"
-                            :value true}
-   "--[no-]cider-connect"  {:doc   "Automatically connect Emacs CIDER"
-                            :value true}
-   "--[no-]portal"         {:doc   "Include djblue/portal as a dependency, and define (user/portal)"
-                            :value true}
-   "--[no-]sayid"          {:doc   "Include Sayid dependency and middleware"
-                            :value true}
-   "--[no-]debug-repl"     {:doc   "Include gfredericks/debug-repl dependency and middleware"
-                            :value true}
+   "--[no-]emacs"          {:doc "Shorthand for --cider-nrepl --refactor-nrepl --cider-connect"}
+   "--[no-]vs-code"        {:doc "Alias for --cider-nrepl"}
+   "--[no-]cider-nrepl"    {:doc "Include CIDER nREPL dependency and middleware"}
+   "--[no-]refactor-nrepl" {:doc "Include refactor-nrepl dependency and middleware"}
+   "--[no-]cider-connect"  {:doc "Automatically connect Emacs CIDER"}
+   "--[no-]portal"         {:doc "Include djblue/portal as a dependency, and define (user/portal)"}
+   "--[no-]sayid"          {:doc "Include Sayid dependency and middleware"}
+   "--[no-]debug-repl"     {:doc "Include gfredericks/debug-repl dependency and middleware"}
    "--[no-]go"             {:doc "Call (user/go) on boot"}
-   "--[no-]namespace-maps" {:doc   "Disable *print-namespace-maps* through nREPL middleware"
-                            :value true}])
+   "--[no-]namespace-maps" {:doc "Disable *print-namespace-maps* through nREPL middleware"}])
 
 (def library-versions
   (:deps (edn/read-string (slurp (io/resource "launchpad/deps.edn")))))
@@ -288,14 +275,14 @@
 
 (defn handle-cli-args [{:keys [executable project-root deps-edn main-opts] :as ctx}]
   (cond
-    (:emacs ctx)
-    (assoc (dissoc ctx :emacs)
-           :cider-nrepl true
-           :refactor-nrepl true
-           :cider-connect true)
-    (:vs-code ctx)
-    (assoc (dissoc ctx :vs-code)
-           :cider-nrepl true)
+    (some? (:emacs ctx))
+    (merge {:cider-nrepl (:emacs ctx)
+            :refactor-nrepl (:emacs ctx)
+            :cider-connect (:emacs ctx)}
+           (dissoc ctx :emacs))
+    (some? (:vs-code ctx))
+    (merge {:cider-nrepl (:emacs ctx)}
+           (dissoc ctx :vs-code))
     :else
     ctx))
 
