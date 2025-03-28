@@ -259,6 +259,14 @@ Most of the time you want to add extra steps either right before, or right after
 <!-- opencollective -->
 ## Lambda Island Open Source
 
+Thank you! launchpad is made possible thanks to our generous backers. [Become a
+backer on OpenCollective](https://opencollective.com/lambda-island) so that we
+can continue to make launchpad better.
+
+<a href="https://opencollective.com/lambda-island">
+<img src="https://opencollective.com/lambda-island/organizations.svg?avatarHeight=46&width=800&button=false">
+<img src="https://opencollective.com/lambda-island/individuals.svg?avatarHeight=46&width=800&button=false">
+</a>
 <img align="left" src="https://github.com/lambdaisland/open-source/raw/master/artwork/lighthouse_readme.png">
 
 &nbsp;
