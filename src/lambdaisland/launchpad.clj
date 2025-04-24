@@ -52,7 +52,8 @@
    "--[no-]sayid"          {:doc "Include Sayid dependency and middleware"}
    "--[no-]debug-repl"     {:doc "Include gfredericks/debug-repl dependency and middleware"}
    "--[no-]go"             {:doc "Call (user/go) on boot"}
-   "--[no-]namespace-maps" {:doc "Disable *print-namespace-maps* through nREPL middleware"}])
+   "--[no-]namespace-maps" {:doc "Disable *print-namespace-maps* through nREPL middleware"}
+   "--[no-]prefix"         {:doc "Disable per-process prefix"}])
 
 (def library-versions
   (:deps (edn/read-string (slurp (io/resource "launchpad/deps.edn")))))
@@ -497,7 +498,8 @@
             (when (pos? size)
               (dotimes [i size]
                 (when @newline?
-                  (.write to (.getBytes prefix))
+                  (when prefix
+                    (.write to (.getBytes prefix)))
                   (vreset! newline? false))
                 (let [b (aget buffer i)]
                   (.write to (int b))
@@ -523,7 +525,10 @@
            _ (.putAll (.environment proc-builder) (or env (:env ctx)))
            color (mod (hash (or prefix (first cmd))) 8)
            prefix (str "[" (ansi-fg (+ 30 color) (or prefix (first cmd))) "] ")
-           process (pipe-process-output (.start proc-builder) prefix)
+           process (pipe-process-output
+                    (.start proc-builder)
+                    (when-not (false? (:prefix ctx))
+                      prefix))
            _ (swap! processes conj process)
            ctx (update ctx :processes (fnil conj []) process)]
        (when show-command?

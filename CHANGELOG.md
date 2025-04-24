@@ -2,6 +2,9 @@
 
 ## Added
 
+- Add `--no-prefix` or `{:launchpad/options {:prefix false}}` to hide the
+  start-of-line per-process prefix in the output
+
 ## Fixed
 
 ## Changed
