@@ -255,6 +255,13 @@ Most of the time you want to add extra steps either right before, or right after
            launchpad/start-process]
           launchpad/after-steps)})
 ```
+## Praise from Users
+
+"This looks like a much easier way to get a new project up and running in a consistent and predictable manner where there is less likelihood of steps being missed or being different enough to cause confusion or additional cognitive load when switching projects. As you point out, also great for getting a team all working in a consistent configuration." -- Tim Cross, @theophilusx1
+
+" Launchpad addresses more than just pulling in deps and adding to the classpath. #5 in the article vastly undersold what launchpad can do and does once setup. It's modifying the whole process adding new env vars, classpath deps through :deps or :aliases. No manual disconnect, kill, stop, export new vars, start with new aliases, connect, eval project when you want to add an environment variable or alias to the running process. And it's doing this hot-reloading automatically for you whether it's a monorepo or split repo. The only hard part is defining the "defrepl", but even that is fairly straightforward. This was all done before 1.12 had sync-deps so it's quite the feature for the time and still since 1.12.
+
+All that being said, I would definitely say it's making clojure processes simpler (adaptable) even if it's not easier (familiar)." -- mjhika
 
 <!-- opencollective -->
 ## Lambda Island Open Source
