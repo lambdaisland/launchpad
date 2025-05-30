@@ -126,6 +126,8 @@ configure launchpad.
  :launchpad/main-opts ["--emacs"] ; additional CLI flags, so you can encode your
                                   ; own preferences
 
+ :launchpad/jvm-opts ["-XX:-OmitStackTraceInFastThrow"] ; additional JVM options
+
  ;; takes options as a map and merges it into the `ctx`
  :launchpad/options {:portal true
                      :nrepl-port 1234}

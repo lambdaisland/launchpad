@@ -12,6 +12,8 @@
 
 - Add `--no-prefix` or `{:launchpad/options {:prefix false}}` to hide the
   start-of-line per-process prefix in the output
+- Support `:launchpad/jvm-opts`: the option is, same as the built-in
+  one, used for injecting JVM options to the clojure process.
 
 ## Fixed
 

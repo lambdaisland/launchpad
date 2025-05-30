@@ -251,6 +251,9 @@
         (update :main-opts (fnil into []) (concat
                                            (:launchpad/main-opts deps-system)
                                            (:launchpad/main-opts deps-local)))
+        (update :java-args (fnil into []) (concat
+                                           (:launchpad/jvm-opts deps-system)
+                                           (:launchpad/jvm-opts deps-local)))
         (merge
          (:launchpad/options deps-system)
          (:launchpad/options deps-local))
