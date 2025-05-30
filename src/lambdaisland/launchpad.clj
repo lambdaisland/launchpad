@@ -53,7 +53,8 @@
    "--[no-]debug-repl"     {:doc "Include gfredericks/debug-repl dependency and middleware"}
    "--[no-]go"             {:doc "Call (user/go) on boot"}
    "--[no-]namespace-maps" {:doc "Disable *print-namespace-maps* through nREPL middleware"}
-   "--[no-]prefix"         {:doc "Disable per-process prefix"}])
+   "--[no-]prefix"         {:doc "Disable per-process prefix"}
+   "--[no-]execute"        {:doc "Parse and execute the first :exec-fn found in aliases"}])
 
 (def library-versions
   (:deps (edn/read-string (slurp (io/resource "launchpad/deps.edn")))))
@@ -349,13 +350,27 @@
                (catch Exception e
                  (println "(user/go) failed" e))))))
 
-(defn run-nrepl-server [{:keys [nrepl-port nrepl-bind middleware] :as ctx}]
+(defn nrepl-server-eval-forms [{:keys [nrepl-port nrepl-bind middleware] :as ctx}]
   (-> ctx
       (update :requires conj 'nrepl.cmdline)
       (update :eval-forms (fnil conj [])
               `(nrepl.cmdline/-main "--port" ~(str nrepl-port)
                                     "--bind" ~(str nrepl-bind)
                                     "--middleware" ~(pr-str middleware)))))
+
+(defn exec-fn-eval-forms [{:keys [aliases deps-edn] :as ctx}]
+  (let [{:keys [alias exec-fn exec-args]}
+        (->> aliases
+             ;; we use only the first alias where :exec-fn is defined
+             (some #(when (get-in deps-edn [:aliases % :exec-fn])
+                      (-> (get-in deps-edn [:aliases %])
+                          (assoc :alias %)))))]
+    (assert (and exec-fn (symbol? exec-fn))
+            "Launchpad could not find any valid :exec-fn symbol, aborting...")
+    (info (format "Executing %s from the %s alias" exec-fn alias))
+    (-> ctx
+        (update :requires conj (symbol (namespace exec-fn)))
+        (update :eval-forms (fnil conj []) `(~exec-fn ~exec-args)))))
 
 (defn register-watch-handlers [ctx handlers]
   (update ctx
@@ -544,7 +559,7 @@
                (System/exit exit)))
            ctx))))))
 
-(defn start-clojure-process [{:keys [aliases nrepl-port] :as ctx}]
+(defn start-clojure-process [ctx]
   (let [args (clojure-cli-args ctx)]
     (apply debug (map shellquote args))
     ((run-process {:cmd args
@@ -566,7 +581,7 @@
                    inject-aliases-as-property
                    include-watcher
                    print-summary
-                   run-nrepl-server])
+                   nrepl-server-eval-forms])
 
 (def after-steps [wait-for-nrepl
                   ;; stuff that happens after the server is up
@@ -575,6 +590,14 @@
 (def default-steps (concat before-steps
                            [start-clojure-process]
                            after-steps))
+
+(def execute-steps [handle-cli-args
+                    ;; extra java flags
+                    disable-stack-trace-elision
+                    inject-aliases-as-property
+                    print-summary
+                    exec-fn-eval-forms
+                    start-clojure-process])
 
 (def ^:deprecated start-process start-clojure-process)
 
@@ -609,17 +632,20 @@
                              end-steps
                              pre-steps
                              post-steps] :as ctx}]
-  (let [ctx (process-steps
+  (let [default-steps
+        (if-not (:execute ctx)
+          (concat
+           start-steps
+           before-steps
+           pre-steps
+           [start-clojure-process]
+           post-steps
+           after-steps
+           end-steps)
+          execute-steps)
+        ctx (process-steps
              (update ctx :aliases concat (map keyword (::cli/argv ctx)))
-             (or steps
-                 (concat
-                  start-steps
-                  before-steps
-                  pre-steps
-                  [start-clojure-process]
-                  post-steps
-                  after-steps
-                  end-steps)))
+             (or steps default-steps))
         processes (:processes ctx)]
     (System/exit (apply min (for [p processes]
                               (.waitFor p))))))
