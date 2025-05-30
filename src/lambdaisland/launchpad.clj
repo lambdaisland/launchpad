@@ -473,7 +473,7 @@
                (str/join ", " (map (comp (partial ansi-fg :magenta) name key) opts))))
     (when (seq aliases)
       (println (ansi-fg :green "Aliases:")
-               (str/join ", " (map (comp (partial ansi-fg :magenta) name) aliases)))))
+               (str/join ", " (map (comp (partial ansi-fg :magenta) str) aliases)))))
   ;; #_(apply println "Java flags: " (:java-args ctx))
   ;; (println "\nMiddleware: " )
   ;; (doseq [a (:middleware ctx)] (println "-" a))

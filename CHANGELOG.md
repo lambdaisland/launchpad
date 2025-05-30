@@ -17,6 +17,17 @@
 
 ## Changed
 
+- Make initial summary print aliases with namespace.
+
+  Before:
+  ```
+  Aliases: dev, cider, zprint, local
+  ```
+  After:
+  ```
+  Aliases: :dev, :home/cider, :home/zprint, :mine/local
+  ```
+
 # 0.42.182-alpha (2025-03-01 / 50cc172)
 
 ## Fixed
