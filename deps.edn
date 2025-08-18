@@ -1,18 +1,18 @@
 {:paths ["src" "resources"]
 
  :deps
- {org.clojure/clojure {:mvn/version "1.12.0"}
+ {org.clojure/clojure {:mvn/version "1.12.1"}
   com.lambdaisland/dotenv {:mvn/version "0.2.5"}
-  com.lambdaisland/cli {:mvn/version "0.23.93"}}
+  com.lambdaisland/cli {:mvn/version "0.24.97"}}
 
  :aliases
  {:clojure
-  {:extra-deps {babashka/babashka {:mvn/version "1.12.197" :scope "provided"}
+  {:extra-deps {babashka/babashka {:mvn/version "1.12.207" :scope "provided"}
                 org.clojure/tools.deps.alpha {:mvn/version "0.15.1254"}
-                com.nextjournal/beholder {:mvn/version "1.0.2"}
-                thheller/shadow-cljs {:mvn/version "2.28.21"}
+                com.nextjournal/beholder {:mvn/version "1.0.3"}
+                thheller/shadow-cljs {:mvn/version "3.2.0"}
                 ;; prevent tools.deps.alpha from dragging in an old guava
-                com.google.guava/guava {:mvn/version "33.4.0-jre"}
+                com.google.guava/guava {:mvn/version "33.4.8-jre"}
                 com.lambdaisland/classpath {:mvn/version "0.6.58"}}}
 
   :test

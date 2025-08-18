@@ -2,6 +2,6 @@
  :deps
  {borkdude/rewrite-edn       {:mvn/version "0.4.9"}
   com.lambdaisland/launchpad {:local/root "."}
-  com.lambdaisland/cli       {:mvn/version "0.23.93"}
+  com.lambdaisland/cli       {:mvn/version "0.24.97"}
   lambdaisland/open-source   {:git/url "https://github.com/lambdaisland/open-source"
-                              :git/sha "28c67d7eff0dc1c38dffcff3f6c91f0aac2713c8"}}}
+                              :git/sha "52d82093bde661cd8c57b2f1e8cfaf854575a583"}}}
