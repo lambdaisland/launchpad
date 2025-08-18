@@ -306,6 +306,21 @@
           :java-args conj
           "-XX:-OmitStackTraceInFastThrow"))
 
+(defn stack-traces-to-stderr
+  "Make Clojure print out its stack traces, instead of writing them to a file"
+  [ctx]
+  (update ctx
+          :java-args conj
+          "-Dclojure.main.report=stderr"))
+
+(defn jdk-allow-attach-self
+  "Set the allowAttachSelf property, needed on JDK21+ in order to cancel
+  evaluation."
+  [ctx]
+  (update ctx
+          :java-args conj
+          "-Djdk.attach.allowAttachSelf"))
+
 (defn inject-aliases-as-property [{:keys [aliases] :as ctx}]
   (update ctx
           :java-args conj
@@ -563,6 +578,8 @@
                    maybe-go
                    ;; extra java flags
                    disable-stack-trace-elision
+                   stack-traces-to-stderr
+                   jdk-allow-attach-self
                    inject-aliases-as-property
                    include-watcher
                    print-summary
