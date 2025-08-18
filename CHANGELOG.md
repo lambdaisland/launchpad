@@ -1,4 +1,4 @@
-# Unreleased
+# 0.44.193-alpha (2025-08-18 / a7b3cf6)
 
 ## Added
 
