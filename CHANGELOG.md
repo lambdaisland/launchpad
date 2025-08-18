@@ -2,9 +2,10 @@
 
 ## Added
 
-## Fixed
-
-## Changed
+- Two more JVM flags are enabled by default
+  - `-J-Dclojure.main.report=stderr`: make Clojure print stacktraces
+    immediately, instead of writing them to a file
+  - `-J-Djdk.attach.allowAttachSelf`: enable interrupting an nREPL evaluation
 
 # 0.43.186-alpha (2025-04-24 / 6b1ecae)
 
@@ -12,8 +13,6 @@
 
 - Add `--no-prefix` or `{:launchpad/options {:prefix false}}` to hide the
   start-of-line per-process prefix in the output
-
-## Fixed
 
 ## Changed
 
