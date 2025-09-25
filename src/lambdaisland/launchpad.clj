@@ -529,13 +529,14 @@
    ((run-process opts) ctx))
   ([{:keys [cmd prefix working-dir
             background? timeout-ms check-exit-code? env
-            color show-command?]
+            show-command?]
      :or {working-dir "."
           check-exit-code? true
           show-command? true}}]
    (fn [ctx]
      (let [working-dir  (io/file working-dir)
            proc-builder (doto (ProcessBuilder. (map str cmd))
+                          (.inheritIO)
                           (.directory working-dir))
            _ (.putAll (.environment proc-builder) (or env (:env ctx)))
            color (mod (hash (or prefix (first cmd))) 8)
@@ -554,9 +555,8 @@
                       (.waitFor process timeout-ms TimeUnit/MILLISECONDS)
                       (.waitFor process))]
            (when (and check-exit-code? (not= 0 exit))
-             (do
-               (println (str prefix) "Exited with non-zero exit code: " exit)
-               (System/exit exit)))
+             (println prefix "Exited with non-zero exit code: " exit)
+             (System/exit exit))
            ctx))))))
 
 (defn start-clojure-process [{:keys [aliases nrepl-port] :as ctx}]

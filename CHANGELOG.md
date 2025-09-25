@@ -34,6 +34,7 @@
   ```
   Aliases: :dev, :home/cider, :home/zprint, :mine/local
   ```
+- Make sure the clojure process can communicate over `stdio`.
 
 # 0.42.182-alpha (2025-03-01 / 50cc172)
 
