@@ -255,6 +255,34 @@ Most of the time you want to add extra steps either right before, or right after
            launchpad/start-process]
           launchpad/after-steps)})
 ```
+
+## Launch `:exec-fn` in aliases
+
+Launchpad can also call the first `:exec-fn` function (and relative `:exec-args`) it finds in its aggregated aliases.
+
+This behavior is enabled by adding `--execute` to the command line.
+
+> [!TIP]
+> The `Aliases:` line in the summary shows the ordered list of processed aliases. Only the first `:exec-fn` is used. 
+
+For example, you can configure an `:mcp` alias (from bhauman/clojure-mcp) within `deps.local.edn` like this:
+
+```clojure
+:aliases {:mcp {:extra-deps {org.slf4j/slf4j-nop {:mvn/version "2.0.16"}
+                             com.bhauman/clojure-mcp {:local/root "/path/to/clojure-mcp"}}
+                :exec-fn clojure-mcp.main/start-mcp-server
+                :exec-args {:port 7888}}}
+...
+```
+
+and launchpad will be able to call `clojure-mcp.main/start-mcp-server` this way:
+
+```
+$ launchpad --execute mcp
+```
+
+Note that this is a completely new code path and neither start nrepl nor hooks up the hot reloading facilities.
+
 ## Praise from Users
 
 "This looks like a much easier way to get a new project up and running in a consistent and predictable manner where there is less likelihood of steps being missed or being different enough to cause confusion or additional cognitive load when switching projects. As you point out, also great for getting a team all working in a consistent configuration." -- Tim Cross, @theophilusx1

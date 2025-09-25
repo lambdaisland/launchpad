@@ -21,6 +21,9 @@
 
 - Add `--no-prefix` or `{:launchpad/options {:prefix false}}` to hide the
   start-of-line per-process prefix in the output
+- Introduce `--execute` (or `{:launchpad/options {:execute false}}`) and
+  functionality that can launch the first configured `:exec-fn` (and
+  relative `:exec-args`).
 
 ## Changed
 
