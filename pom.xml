@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.lambdaisland</groupId>
   <artifactId>launchpad</artifactId>
-  <version>0.44.193-alpha</version>
+  <version>0.45.201-alpha</version>
   <name>launchpad</name>
   <description>Clojure dev process launcher</description>
   <url>https://github.com/lambdaisland/launchpad</url>
@@ -25,13 +25,13 @@
     <url>https://github.com/lambdaisland/launchpad</url>
     <connection>scm:git:git://github.com/lambdaisland/launchpad.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/lambdaisland/launchpad.git</developerConnection>
-    <tag>96d6464c8457c5a7d26af9900398ecafd0862c58</tag>
+    <tag>4fa29b0fa00c71851c5f11163b6c1e76de423957</tag>
   </scm>
   <dependencies>
     <dependency>
       <groupId>org.clojure</groupId>
       <artifactId>clojure</artifactId>
-      <version>1.12.0</version>
+      <version>1.12.2</version>
     </dependency>
     <dependency>
       <groupId>com.lambdaisland</groupId>
@@ -41,12 +41,12 @@
     <dependency>
       <groupId>com.lambdaisland</groupId>
       <artifactId>cli</artifactId>
-      <version>0.23.93</version>
+      <version>0.24.97</version>
     </dependency>
     <dependency>
       <groupId>babashka</groupId>
       <artifactId>babashka</artifactId>
-      <version>1.12.197</version>
+      <version>1.12.208</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -58,19 +58,19 @@
     <dependency>
       <groupId>com.nextjournal</groupId>
       <artifactId>beholder</artifactId>
-      <version>1.0.2</version>
+      <version>1.0.3</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>thheller</groupId>
       <artifactId>shadow-cljs</artifactId>
-      <version>2.28.21</version>
+      <version>3.2.1</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>33.4.0-jre</version>
+      <version>33.5.0-jre</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -107,7 +107,7 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <git-revision>96d6464c8457c5a7d26af9900398ecafd0862c58</git-revision>
+              <git-revision>4fa29b0fa00c71851c5f11163b6c1e76de423957</git-revision>
             </manifestEntries>
           </archive>
         </configuration>
