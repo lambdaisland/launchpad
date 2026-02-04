@@ -320,7 +320,8 @@
   [ctx]
   (update ctx
           :java-args conj
-          "-Djdk.attach.allowAttachSelf"))
+          "-Djdk.attach.allowAttachSelf"
+          "-XX:+EnableDynamicAgentLoading"))
 
 (defn inject-aliases-as-property [{:keys [aliases] :as ctx}]
   (update ctx

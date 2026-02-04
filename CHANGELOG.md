@@ -2,17 +2,10 @@
 
 ## Added
 
-## Fixed
-
-## Changed
+- Added the `-XX:+EnableDynamicAgentLoading` flag, so nREPL can correctly load its agent
 
 # 0.45.201-alpha (2025-09-25 / 6b69e05)
 
-## Added
-
-## Fixed
-
-## Changed
 
 # 0.44.193-alpha (2025-08-18 / a7b3cf6)
 
