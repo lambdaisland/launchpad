@@ -209,7 +209,7 @@ Launchpad performs a number of steps, currently these are
 - `include-watcher` : Start up the main watcher which will handle deps.edn/.env watching
 - `run-nrepl-server` : Add startup code to start nREPL
 - `print-summary` : Print an overview of aliases and extra dependencies that are being included
-- `start-process` : This is where we actually start Clojure
+- `start-clojure-process` : This is where we actually start Clojure
 - `wait-for-nrepl` : Wait for nREPL to be available
 - `maybe-connect-emacs` : Instruct Emacs to connect to nREPL
 
@@ -237,7 +237,7 @@ update:
 - `:paths` : paths to add to the classpath
 
 Most of the time you want to add extra steps either right before, or right after
-`start-process`. The vars `before-steps` and `after-steps` are useful for that.
+`start-clojure-process`. The vars `before-steps` and `after-steps` are useful for that.
 
 ```clj
 (require '[lambdaisland.launchpad :as launchpad]
@@ -252,7 +252,7 @@ Most of the time you want to add extra steps either right before, or right after
  {:steps
   (concat launchpad/before-steps
           [npm-install
-           launchpad/start-process]
+           launchpad/start-clojure-process]
           launchpad/after-steps)})
 ```
 
