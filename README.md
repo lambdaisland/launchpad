@@ -219,6 +219,7 @@ command. These are some of the keys in the context that you can read, set, or
 update:
 
 - `:java-args` : sequence of JVM arguments, without the leading `-J`
+- `:extra-java-args` : like `:java-args`, but gets merged from `deps.edn`/`deps.local.edn`, rather than replaced
 - `:requires` : namespaces to load (sequence of symbols)
 - `:eval-forms` : code to evaluate (sequence of forms)
 - `:options` : the result of parsing command line flags (map)

@@ -255,6 +255,10 @@
         (merge
          (:launchpad/options deps-system)
          (:launchpad/options deps-local))
+
+        (update :java-args into (get-in deps-system [:launchpad/options :extra-java-args]))
+        (update :java-args into (get-in deps-local [:launchpad/options :extra-java-args]))
+
         (assoc :deps-edn (merge-with (fn [a b]
                                        (cond
                                          (and (map? a) (map? b))

@@ -2,6 +2,8 @@
 
 ## Added
 
+- Added `:extra-java-args`, especially useful from `deps.local.edn`
+
 ## Fixed
 
 ## Changed
