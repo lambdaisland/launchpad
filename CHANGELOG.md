@@ -4,6 +4,13 @@
 
 ## Fixed
 
+- Preserve per-build `:js-options` in `merged-shadow-config`. Previously the
+  root project's builds had their `:js-options` unconditionally replaced with
+  `{}`, which clobbered settings like `:js-provider :external` and
+  `:external-index`. Now the root project's `:js-options` are left untouched,
+  and submodule builds get `:js-package-dirs` merged into their existing
+  `:js-options` rather than replacing them.
+
 ## Changed
 
 # 0.47.210-alpha (2026-03-02 / 54388ed)
