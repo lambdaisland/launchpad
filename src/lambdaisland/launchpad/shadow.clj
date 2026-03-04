@@ -96,11 +96,11 @@
                                      k
                                      (keyword module-name (name k)))]
                              [build-id
-                              (assoc (update-build-keys process-root module-root v)
-                                     :build-id build-id
-                                     :js-options (if (= "" module-path)
-                                                   {}
-                                                   {:js-package-dirs [(str module-path "/node_modules")]}))])))
+                              (cond-> (update-build-keys process-root module-root v)
+                                true
+                                (assoc :build-id build-id)
+                                (not= "" module-path)
+                                (update :js-options merge {:js-package-dirs [(str module-path "/node_modules")]}))])))
 
                     builds)))))
         (assoc :deps {})
