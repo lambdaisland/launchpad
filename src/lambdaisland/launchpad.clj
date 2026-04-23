@@ -287,7 +287,7 @@
             :cider-connect (:emacs ctx)}
            (dissoc ctx :emacs))
     (some? (:vs-code ctx))
-    (merge {:cider-nrepl (:emacs ctx)}
+    (merge {:cider-nrepl (:vs-code ctx)}
            (dissoc ctx :vs-code))
     :else
     ctx))
