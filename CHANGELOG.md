@@ -1,3 +1,11 @@
+# Unreleased
+
+## Added
+
+## Fixed
+
+## Changed
+
 # 0.49.220-alpha (2026-04-29 / c1860a5)
 
 ## Fixed
