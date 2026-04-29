@@ -1,12 +1,12 @@
 # Unreleased
 
-## Added
-
 ## Fixed
 
 - Fix a regression in the handling of the `--vs-code` flag
 
 ## Changed
+
+- Bump dependencies
 
 # 0.48.215-alpha (2026-03-04 / 2094974)
 
