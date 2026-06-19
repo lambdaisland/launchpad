@@ -3,6 +3,8 @@
 ## Added
 
 ## Fixed
+- Preserve & relativize to JVM proc root the shadow-cljs  per-build
+  `[:js-options :js-package-dirs]`.
 
 ## Changed
 
