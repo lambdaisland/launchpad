@@ -1,12 +1,8 @@
 # Unreleased
 
-## Added
-
 ## Fixed
 - Preserve & relativize to JVM proc root the shadow-cljs  per-build
   `[:js-options :js-package-dirs]`.
-
-## Changed
 
 # 0.49.220-alpha (2026-04-29 / c1860a5)
 
