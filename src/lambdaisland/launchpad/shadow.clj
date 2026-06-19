@@ -52,6 +52,18 @@
     (:output-to build)
     (update :output-to (partial relativize process-root module-root))))
 
+(defn update-js-package-dirs
+  "Fix a merged build's :js-package-dirs for shadow running from the JVM process root:
+  relativize declared dirs to that root, or default to the module's then root node_modules. "
+  [build process-root module-root module-path]
+  (update-in build [:js-options :js-package-dirs]
+             (fn [dirs]
+               ;; relativize declared js-package-dirs to JVM process root. Example:
+               ;; :js-package-dirs ["../../node_modules"]
+               (mapv (partial relativize process-root module-root)
+                     (or dirs
+                         [(str module-path "/node_modules")])))))
+
 (defn merged-shadow-config
   "Given multiple locations that contain a shadow-cljs.edn, merge them into a
   single config, where the path locations have been updated."
@@ -100,7 +112,7 @@
                                 true
                                 (assoc :build-id build-id)
                                 (not= "" module-path)
-                                (update :js-options merge {:js-package-dirs [(str module-path "/node_modules")]}))])))
+                                (update-js-package-dirs process-root module-root module-path))])))
 
                     builds)))))
         (assoc :deps {})
