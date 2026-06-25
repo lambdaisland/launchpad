@@ -1,4 +1,4 @@
-# Unreleased
+# 0.51.231-alpha (2026-06-25 / fc43873)
 
 ## Added
 
