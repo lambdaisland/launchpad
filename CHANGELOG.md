@@ -6,6 +6,8 @@
 
 ## Changed
 
+- Bump dependencies
+
 # 0.50.226-alpha (2026-06-19 / 6cde6c7)
 
 ## Fixed
