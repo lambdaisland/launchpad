@@ -13,7 +13,7 @@
                 thheller/shadow-cljs {:mvn/version "3.4.6"}
                 ;; prevent tools.deps.alpha from dragging in an old guava
                 com.google.guava/guava {:mvn/version "33.6.0-jre"}
-                com.lambdaisland/classpath {:mvn/version "0.6.58"}}}
+                com.lambdaisland/classpath {:mvn/version "0.7.66"}}}
 
   :test
   {:extra-paths ["test"]

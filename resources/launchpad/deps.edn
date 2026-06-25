@@ -3,7 +3,7 @@
 ;; versions.
 {:deps
  {com.lambdaisland/launchpad    {:mvn/version "0.50.226-alpha"}
-  com.lambdaisland/classpath    {:mvn/version "0.6.58"}
+  com.lambdaisland/classpath    {:mvn/version "0.7.66"}
   com.github.jnr/jnr-posix      {:mvn/version "3.1.20"}
   thheller/shadow-cljs          {:mvn/version "3.2.0"}
   com.google.guava/guava        {:mvn/version "33.4.8-jre"}
