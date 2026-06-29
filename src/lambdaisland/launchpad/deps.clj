@@ -2,7 +2,7 @@
   (:require
    [clojure.edn :as edn]
    [clojure.java.io :as io]
-   [clojure.tools.deps.alpha :as deps]
+   [clojure.tools.deps :as deps]
    [clojure.string :as str]
    [lambdaisland.classpath.watch-deps :as watch-deps]
    [lambdaisland.classpath :as licp]))

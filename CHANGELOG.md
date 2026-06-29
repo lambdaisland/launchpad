@@ -1,20 +1,14 @@
 # Unreleased
 
-## Added
-
 ## Fixed
 
-## Changed
+- Fix lingering tools.deps.alpha reference
 
 # 0.51.231-alpha (2026-06-25 / fc43873)
 
-## Added
-
-## Fixed
-
 ## Changed
 
-- Bump dependencies
+- Bump dependencies, this updated lambdaisland/classpath, which switched from tools.deps.alpha to tools.deps
 
 # 0.50.226-alpha (2026-06-19 / 6cde6c7)
 
