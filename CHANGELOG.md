@@ -1,10 +1,8 @@
 # Unreleased
 
-## Added
-
-## Fixed
-
 ## Changed
+
+- Bump Launchpad's own dependencies, and the default versions of dependencies it injects
 
 # 0.52.234-alpha (2026-06-29 / 4758898)
 
