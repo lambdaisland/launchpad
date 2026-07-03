@@ -1,8 +1,8 @@
 {;; This is a good place to depend on developer tooling, so you can keep that
  ;; out of your sub-projects and have it all in one place
  :deps
- {djblue/portal {:mvn/version "0.29.1"}
-  lambdaisland/kaocha {:mvn/version "1.69.1069"}
+ {djblue/portal {:mvn/version "0.66.0"}
+  lambdaisland/kaocha {:mvn/version "1.91.1392"}
   vvvvalvalval/scope-capture {:mvn/version "0.3.3"}}
 
  ;; Monorepo setup with two subprojects, if you have a multi-repo setup then use
