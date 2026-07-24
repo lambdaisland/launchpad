@@ -1,4 +1,4 @@
-# Unreleased
+# 0.54.242-alpha (2026-07-24 / 60440d6)
 
 ## Changed
 
