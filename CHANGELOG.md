@@ -1,10 +1,8 @@
 # Unreleased
 
-## Added
-
-## Fixed
-
 ## Changed
+
+- Dependency version bumps
 
 # 0.53.238-alpha (2026-07-03 / 9635a9a)
 
