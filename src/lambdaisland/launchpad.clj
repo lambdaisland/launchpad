@@ -271,7 +271,7 @@
         ;; Pull these out and inject them into -Sdeps, otherwise they are only
         ;; picked up with the next reload
         (update :extra-deps merge (:deps deps-local))
-        (assoc :paths (concat (:paths deps-edn) (:paths deps-local)))
+        (assoc :paths (into (:paths deps-edn) (:paths deps-local)))
         ;; It seems like if we set `{:aliases {}}` via `-Sdeps` it overrides
         ;; deps.edn aliases, rather than merging them, so we merge them
         ;; ourselves and pass them all to -Sdeps. Needs more testing to see if
