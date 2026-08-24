@@ -1,10 +1,13 @@
 # Unreleased
 
-## Added
-
 ## Fixed
 
+- Keep `:paths` in the deps.edn basis a vector, to prevent downstream issues
+
 ## Changed
+
+- Dependency version bumps
+- Switch from tools.deps.alpha to tools.deps
 
 # 0.54.242-alpha (2026-07-24 / 60440d6)
 
