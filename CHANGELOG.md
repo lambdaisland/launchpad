@@ -1,4 +1,4 @@
-# Unreleased
+# 0.55.248-alpha (2026-08-24 / d63fcb3)
 
 ## Fixed
 
