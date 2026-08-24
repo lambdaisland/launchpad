@@ -1,7 +1,7 @@
 {;; This is a good place to depend on developer tooling, so you can keep that
  ;; out of your sub-projects and have it all in one place
  :deps
- {djblue/portal {:mvn/version "0.66.0"}
+ {djblue/portal {:mvn/version "0.67.2"}
   lambdaisland/kaocha {:mvn/version "1.91.1392"}
   vvvvalvalval/scope-capture {:mvn/version "0.3.3"}}
 

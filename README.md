@@ -51,7 +51,7 @@ additional aliases without restarting. How cool is that?
 
 ## Project setup
 
-See `template` for an example setup, you need a few different pieces.
+See `template` for an example monorepo setup, you need a few different pieces.
 
 * `bb.edn`
 
