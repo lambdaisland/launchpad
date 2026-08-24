@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.lambdaisland</groupId>
   <artifactId>launchpad</artifactId>
-  <version>0.54.242-alpha</version>
+  <version>0.55.248-alpha</version>
   <name>launchpad</name>
   <description>Clojure dev process launcher</description>
   <url>https://github.com/lambdaisland/launchpad</url>
@@ -25,7 +25,7 @@
     <url>https://github.com/lambdaisland/launchpad</url>
     <connection>scm:git:git://github.com/lambdaisland/launchpad.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/lambdaisland/launchpad.git</developerConnection>
-    <tag>f51bb81dce015c811afb25c2231ba1aeab6af516</tag>
+    <tag>4bfd5a20c021fe1feaeb1461f2176f75943e3139</tag>
   </scm>
   <dependencies>
     <dependency>
@@ -46,13 +46,13 @@
     <dependency>
       <groupId>babashka</groupId>
       <artifactId>babashka</artifactId>
-      <version>1.12.218</version>
+      <version>1.13.219</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.clojure</groupId>
-      <artifactId>tools.deps.alpha</artifactId>
-      <version>0.15.1254</version>
+      <artifactId>tools.deps</artifactId>
+      <version>0.31.1642</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -64,19 +64,13 @@
     <dependency>
       <groupId>thheller</groupId>
       <artifactId>shadow-cljs</artifactId>
-      <version>3.4.11</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-      <version>33.6.0-jre</version>
+      <version>3.4.12</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.lambdaisland</groupId>
       <artifactId>classpath</artifactId>
-      <version>0.8.70</version>
+      <version>0.9.74</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>
@@ -107,7 +101,7 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <git-revision>f51bb81dce015c811afb25c2231ba1aeab6af516</git-revision>
+              <git-revision>4bfd5a20c021fe1feaeb1461f2176f75943e3139</git-revision>
             </manifestEntries>
           </archive>
         </configuration>
