@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.lambdaisland</groupId>
   <artifactId>launchpad</artifactId>
-  <version>0.55.248-alpha</version>
+  <version>0.56.251-alpha</version>
   <name>launchpad</name>
   <description>Clojure dev process launcher</description>
   <url>https://github.com/lambdaisland/launchpad</url>
@@ -25,13 +25,13 @@
     <url>https://github.com/lambdaisland/launchpad</url>
     <connection>scm:git:git://github.com/lambdaisland/launchpad.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/lambdaisland/launchpad.git</developerConnection>
-    <tag>4bfd5a20c021fe1feaeb1461f2176f75943e3139</tag>
+    <tag>edcd7525cb79ef2c1dd30faca46b9aa94232ab16</tag>
   </scm>
   <dependencies>
     <dependency>
       <groupId>org.clojure</groupId>
       <artifactId>clojure</artifactId>
-      <version>1.12.5</version>
+      <version>1.12.6</version>
     </dependency>
     <dependency>
       <groupId>com.lambdaisland</groupId>
@@ -41,7 +41,7 @@
     <dependency>
       <groupId>com.lambdaisland</groupId>
       <artifactId>cli</artifactId>
-      <version>1.30.130</version>
+      <version>1.31.133</version>
     </dependency>
     <dependency>
       <groupId>babashka</groupId>
@@ -52,7 +52,7 @@
     <dependency>
       <groupId>org.clojure</groupId>
       <artifactId>tools.deps</artifactId>
-      <version>0.31.1642</version>
+      <version>0.31.1646</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -64,7 +64,7 @@
     <dependency>
       <groupId>thheller</groupId>
       <artifactId>shadow-cljs</artifactId>
-      <version>3.4.12</version>
+      <version>3.5.4</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -101,7 +101,7 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <git-revision>4bfd5a20c021fe1feaeb1461f2176f75943e3139</git-revision>
+              <git-revision>edcd7525cb79ef2c1dd30faca46b9aa94232ab16</git-revision>
             </manifestEntries>
           </archive>
         </configuration>
