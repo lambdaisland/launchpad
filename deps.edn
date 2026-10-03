@@ -1,17 +1,17 @@
 {:paths ["src" "resources"]
 
  :deps
- {org.clojure/clojure     {:mvn/version "1.12.5"}
+ {org.clojure/clojure     {:mvn/version "1.12.6"}
   com.lambdaisland/dotenv {:mvn/version "0.2.5"}
-  com.lambdaisland/cli    {:mvn/version "1.30.130"}}
+  com.lambdaisland/cli    {:mvn/version "1.31.133"}}
 
  :aliases
  {:clojure
   {:extra-deps
    {babashka/babashka          {:mvn/version "1.13.219" :scope "provided"}
-    org.clojure/tools.deps     {:mvn/version "0.31.1642"}
+    org.clojure/tools.deps     {:mvn/version "0.31.1646"}
     com.nextjournal/beholder   {:mvn/version "1.0.3"}
-    thheller/shadow-cljs       {:mvn/version "3.4.12"}
+    thheller/shadow-cljs       {:mvn/version "3.5.4"}
     com.lambdaisland/classpath {:mvn/version "0.9.74"}}}
 
   :test

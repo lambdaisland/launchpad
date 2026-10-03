@@ -4,11 +4,11 @@
 {:deps
  {com.lambdaisland/launchpad    {:mvn/version "0.55.248-alpha"}
   com.lambdaisland/classpath    {:mvn/version "0.9.74"}
-  com.github.jnr/jnr-posix      {:mvn/version "3.2.2"}
-  thheller/shadow-cljs          {:mvn/version "3.4.12"}
-  com.google.guava/guava        {:mvn/version "33.7.1-jre"}
-  cider/cider-nrepl             {:mvn/version "0.62.2"}
-  nrepl/nrepl                   {:mvn/version "1.7.0"}
+  com.github.jnr/jnr-posix      {:mvn/version "3.2.4"}
+  thheller/shadow-cljs          {:mvn/version "3.5.4"}
+  com.google.guava/guava        {:mvn/version "33.7.2-jre"}
+  cider/cider-nrepl             {:mvn/version "0.63.1"}
+  nrepl/nrepl                   {:mvn/version "1.8.0"}
   refactor-nrepl/refactor-nrepl {:mvn/version "3.14.0"}
   djblue/portal                 {:mvn/version "0.67.2"}
   com.billpiel/sayid            {:mvn/version "0.7.1"}

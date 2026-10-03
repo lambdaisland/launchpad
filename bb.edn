@@ -1,7 +1,7 @@
 {:paths ["src" "resources"]
  :deps
  {com.lambdaisland/launchpad {:local/root "."}
-  borkdude/rewrite-edn       {:mvn/version "0.5.9"}
-  com.lambdaisland/cli       {:mvn/version "1.30.130"}
+  borkdude/rewrite-edn       {:mvn/version "0.6.10"}
+  com.lambdaisland/cli       {:mvn/version "1.31.133"}
   lambdaisland/open-source   {:git/url "https://github.com/lambdaisland/open-source"
-                              :git/sha "b0d1fe78a49390535a8f1fec8a4507b73d746359"}}}
+                              :git/sha "9719c18fff5a1ed41ad1929d67d8c4155662e09d"}}}

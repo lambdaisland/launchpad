@@ -1,10 +1,8 @@
 # Unreleased
 
-## Added
-
-## Fixed
-
 ## Changed
+
+- Dependency version bumps, in particular nrepl 1.8.0 which fixes a deps hot-reloading issue
 
 # 0.55.248-alpha (2026-08-24 / d63fcb3)
 
